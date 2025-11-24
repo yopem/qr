@@ -25,5 +25,6 @@ vite.config.ts.timestamp-*
 # AI
 .opencode/
 openspec/
+opencode.json
 opencode.jsonc
 AGENTS.md

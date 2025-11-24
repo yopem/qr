@@ -1,15 +1,33 @@
-# Package Managers
-package-lock.json
-pnpm-lock.yaml
-yarn.lock
-bun.lock
-bun.lockb
+node_modules
 
-# Miscellaneous
-/static/
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
 
 # AI
 .opencode/
 openspec/
 opencode.json
+opencode.jsonc
 AGENTS.md
+
+# MISC
+migrations/

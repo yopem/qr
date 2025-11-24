@@ -4,6 +4,11 @@
 		"svelte": {
 			"type": "remote",
 			"url": "https://mcp.svelte.dev/mcp"
-		}
+		},
+    "browsermcp": {
+      "type": "local",
+      "command": ["bun", "x", "@browsermcp/mcp@latest"],
+      "enabled": true
+    }
 	}
 }
