@@ -19,7 +19,6 @@
   let { user = null }: Props = $props()
   let darkMode = $state(false)
 
-  // Initialize dark mode from localStorage and system preference
   $effect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("darkMode")
@@ -48,7 +47,7 @@
 </script>
 
 <header
-  class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+  class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60"
 >
   <div class="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
     <div class="flex items-center gap-6">
