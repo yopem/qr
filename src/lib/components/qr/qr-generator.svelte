@@ -10,12 +10,10 @@
   } from "$lib/components/ui/card"
   import { Input } from "$lib/components/ui/input"
   import { Label } from "$lib/components/ui/label"
-  import { Tabs, TabsList, TabsTrigger } from "$lib/components/ui/tabs"
   import { Textarea } from "$lib/components/ui/textarea"
   import { generateQrFilename } from "$lib/utils/qr-generator"
 
   import { generateQrCode } from "../../../routes/qr-codes.remote.js"
-  import QrCustomizer from "./qr-customizer.svelte"
 
   interface Props {
     /**
@@ -27,13 +25,22 @@
      * Initial QR type (static or dynamic)
      */
     initialType?: "static" | "dynamic"
+    /**
+     * Initial URL to populate the form
+     * Used when scanning a QR code and switching to generate tab
+     */
+    initialUrl?: string
   }
 
-  let { showModeTabs = true, initialType = "static" }: Props = $props()
+  let { showModeTabs = true, initialType = "static", initialUrl }: Props = $props()
 
   let qrType = $state<"static" | "dynamic">(initialType)
   let generatedSvg = $state<string | null>(null)
   let generatedShortCode = $state<string | null>(null)
+
+  // Derive reactive values for hidden inputs
+  let foregroundColor = $derived(generateQrCode.fields.foregroundColor.value() || "#000000")
+  let backgroundColor = $derived(generateQrCode.fields.backgroundColor.value() || "#FFFFFF")
 
   function handleDownload() {
     if (!generatedSvg) return
@@ -74,14 +81,24 @@
     img.src = svgUrl
   }
 
-  function handleTypeChange(type: "static" | "dynamic") {
-    qrType = type
-    generateQrCode.fields.type.set(type)
-  }
-
   // Initialize the type field on mount
   $effect(() => {
     generateQrCode.fields.type.set(qrType)
+  })
+
+  // Populate URL field when initialUrl is provided
+  $effect(() => {
+    if (initialUrl && !generateQrCode.fields.destinationUrl.value()) {
+      generateQrCode.fields.destinationUrl.set(initialUrl)
+    }
+  })
+
+  // Auto-add https:// to URLs that don't have a protocol
+  $effect(() => {
+    const url = generateQrCode.fields.destinationUrl.value()
+    if (url && !url.startsWith("http://") && !url.startsWith("https://")) {
+      generateQrCode.fields.destinationUrl.set(`https://${url}`)
+    }
   })
 
   $effect(() => {
@@ -92,137 +109,167 @@
   })
 </script>
 
-<div class="qr-generator">
-  <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-    <div>
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate QR Code</CardTitle>
-          <CardDescription>
-            Create a QR code for any URL. {qrType === "dynamic"
-              ? "Dynamic QR codes can be edited after creation."
-              : "Static QR codes are permanent."}
-          </CardDescription>
-        </CardHeader>
+<Card>
+  <CardHeader>
+    <CardTitle>Generate a QR</CardTitle>
+    <CardDescription>
+      Quickly generate static or dynamic QR codes, personalize their design, and update their
+      destinations at any time.
+    </CardDescription>
+  </CardHeader>
 
-        <CardContent>
-          <form {...generateQrCode} class="space-y-6">
-            <input type="hidden" name="type" value={qrType} />
+  <CardContent>
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <!-- Left side: Form -->
+      <form {...generateQrCode} class="space-y-6">
+        <input type="hidden" name="type" value={qrType} />
+        <input name="foregroundColor" value={foregroundColor} type="hidden" />
+        <input name="backgroundColor" value={backgroundColor} type="hidden" />
 
-            {#if showModeTabs}
-              <Tabs
-                value={qrType}
-                onValueChange={(v) => handleTypeChange(v as "static" | "dynamic")}
-              >
-                <TabsList class="grid w-full grid-cols-2">
-                  <TabsTrigger value="static">Static</TabsTrigger>
-                  <TabsTrigger value="dynamic">Dynamic (Login Required)</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            {/if}
+        <div class="space-y-2">
+          <Label for="url">Destination URL</Label>
+          <Input
+            {...generateQrCode.fields.destinationUrl.as("url")}
+            id="url"
+            placeholder="example.com or https://example.com"
+            required
+          />
+          {#each generateQrCode.fields.destinationUrl.issues() as issue (issue.message)}
+            <p class="text-sm text-destructive">{issue.message}</p>
+          {/each}
+        </div>
 
-            <div class="space-y-2">
-              <Label for="url">Destination URL</Label>
-              <Input
-                {...generateQrCode.fields.destinationUrl.as("url")}
-                id="url"
-                placeholder="https://example.com"
-                required
-              />
-              {#each generateQrCode.fields.destinationUrl.issues() as issue (issue.message)}
-                <p class="text-sm text-destructive">{issue.message}</p>
-              {/each}
-            </div>
+        {#if showModeTabs}
+          <div class="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="dynamic-checkbox"
+              checked={qrType === "dynamic"}
+              onchange={(e) => {
+                qrType = e.currentTarget.checked ? "dynamic" : "static"
+                generateQrCode.fields.type.set(qrType)
+              }}
+              class="h-4 w-4"
+            />
+            <Label for="dynamic-checkbox">DynamicQR</Label>
+          </div>
+        {/if}
 
-            {#if qrType === "dynamic"}
-              <div class="space-y-2">
-                <Label for="title">Title (Optional)</Label>
-                <Input
-                  {...generateQrCode.fields.title.as("text")}
-                  id="title"
-                  placeholder="My QR Code"
-                  maxlength={100}
-                />
-                {#each generateQrCode.fields.title.issues() as issue (issue.message)}
-                  <p class="text-sm text-destructive">{issue.message}</p>
-                {/each}
-              </div>
-
-              <div class="space-y-2">
-                <Label for="description">Description (Optional)</Label>
-                <Textarea
-                  {...generateQrCode.fields.description.as("text")}
-                  id="description"
-                  placeholder="Brief description of this QR code"
-                  maxlength={500}
-                />
-                {#each generateQrCode.fields.description.issues() as issue (issue.message)}
-                  <p class="text-sm text-destructive">{issue.message}</p>
-                {/each}
-              </div>
-            {/if}
-
-            <div class="flex gap-4">
-              <Button type="submit" disabled={!!generateQrCode.pending} class="flex-1">
-                {#if generateQrCode.pending}
-                  <Loader2 class="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                {:else}
-                  Generate QR Code
-                {/if}
-              </Button>
-
-              {#if generatedSvg}
-                <Button type="button" variant="outline" onclick={handleDownload}>
-                  <Download class="mr-2 h-4 w-4" />
-                  Download
-                </Button>
-              {/if}
-            </div>
-
-            {#each generateQrCode.fields.allIssues() as issue (issue.message)}
+        {#if qrType === "dynamic"}
+          <div class="space-y-2">
+            <Label for="title">Title (Optional)</Label>
+            <Input
+              {...generateQrCode.fields.title.as("text")}
+              id="title"
+              placeholder="My QR Code"
+              maxlength={100}
+            />
+            {#each generateQrCode.fields.title.issues() as issue (issue.message)}
               <p class="text-sm text-destructive">{issue.message}</p>
             {/each}
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+          </div>
 
-    <div class="space-y-6">
-      <QrCustomizer form={generateQrCode} />
+          <div class="space-y-2">
+            <Label for="description">Description (Optional)</Label>
+            <Textarea
+              {...generateQrCode.fields.description.as("text")}
+              id="description"
+              placeholder="Brief description of this QR code"
+              maxlength={500}
+            />
+            {#each generateQrCode.fields.description.issues() as issue (issue.message)}
+              <p class="text-sm text-destructive">{issue.message}</p>
+            {/each}
+          </div>
+        {/if}
 
-      {#if generatedSvg}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your QR Code</CardTitle>
-            {#if generatedShortCode}
-              <CardDescription>
-                Short URL: <code class="rounded bg-muted px-1 py-0.5"
-                  >{window.location.origin}/{generatedShortCode}</code
-                >
-              </CardDescription>
-            {/if}
-          </CardHeader>
-
-          <CardContent class="space-y-4">
-            <div class="flex justify-center">
-              <div class="rounded-lg border bg-white p-8">
-                <div class="h-[200px] w-[200px] overflow-hidden [&_svg]:h-full [&_svg]:w-full">
-                  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-                  {@html generatedSvg}
-                </div>
-              </div>
+        <!-- Color customization inline -->
+        <div class="space-y-4 rounded-lg border p-4">
+          <div class="space-y-2">
+            <Label for="foreground-color">Foreground Color</Label>
+            <div class="flex gap-2">
+              <Input
+                id="foreground-color"
+                type="color"
+                value={foregroundColor}
+                oninput={(e) => generateQrCode.fields.foregroundColor.set(e.currentTarget.value)}
+                class="h-10 w-20"
+              />
+              <Input
+                type="text"
+                value={foregroundColor}
+                oninput={(e) => generateQrCode.fields.foregroundColor.set(e.currentTarget.value)}
+                placeholder="#000000"
+                class="flex-1 font-mono text-sm"
+              />
             </div>
+          </div>
 
-            <div class="flex justify-center">
-              <Button type="button" variant="outline" onclick={handleDownload}>
-                <Download class="mr-2 h-4 w-4" />
-                Download QR Code
-              </Button>
+          <div class="space-y-2">
+            <Label for="background-color">Background Color</Label>
+            <div class="flex gap-2">
+              <Input
+                id="background-color"
+                type="color"
+                value={backgroundColor}
+                oninput={(e) => generateQrCode.fields.backgroundColor.set(e.currentTarget.value)}
+                class="h-10 w-20"
+              />
+              <Input
+                type="text"
+                value={backgroundColor}
+                oninput={(e) => generateQrCode.fields.backgroundColor.set(e.currentTarget.value)}
+                placeholder="#FFFFFF"
+                class="flex-1 font-mono text-sm"
+              />
             </div>
-          </CardContent>
-        </Card>
-      {/if}
+          </div>
+        </div>
+
+        <Button type="submit" disabled={!!generateQrCode.pending} class="w-full">
+          {#if generateQrCode.pending}
+            <Loader2 class="mr-2 h-4 w-4 animate-spin" />
+            Generating...
+          {:else}
+            Generate
+          {/if}
+        </Button>
+
+        {#each generateQrCode.fields.allIssues() as issue (issue.message)}
+          <p class="text-sm text-destructive">{issue.message}</p>
+        {/each}
+      </form>
+
+      <!-- Right side: QR Code Preview -->
+      <div class="flex flex-col items-center justify-center gap-4">
+        {#if generatedSvg}
+          <div class="rounded-lg border bg-white p-8">
+            <div class="h-[250px] w-[250px] overflow-hidden [&_svg]:h-full [&_svg]:w-full">
+              <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+              {@html generatedSvg}
+            </div>
+          </div>
+
+          <Button type="button" variant="outline" onclick={handleDownload} class="w-full max-w-xs">
+            <Download class="mr-2 h-4 w-4" />
+            Download
+          </Button>
+
+          {#if generatedShortCode}
+            <p class="text-center text-sm text-muted-foreground">
+              Short URL: <code class="rounded bg-muted px-1 py-0.5"
+                >{window.location.origin}/{generatedShortCode}</code
+              >
+            </p>
+          {/if}
+        {:else}
+          <div
+            class="flex h-[250px] w-[250px] items-center justify-center rounded-lg border bg-muted"
+          >
+            <p class="text-sm text-muted-foreground">QR code will appear here</p>
+          </div>
+        {/if}
+      </div>
     </div>
-  </div>
-</div>
+  </CardContent>
+</Card>

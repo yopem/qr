@@ -20,7 +20,6 @@ const qrGenerateSchema = z.object({
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
     .optional(),
-  pattern: z.enum(["square", "dot", "rounded"]).optional(),
 })
 
 export const generateQrCode = form(qrGenerateSchema, async (data) => {
@@ -44,7 +43,6 @@ export const generateQrCode = form(qrGenerateSchema, async (data) => {
     styles: {
       foregroundColor: data.foregroundColor,
       backgroundColor: data.backgroundColor,
-      pattern: data.pattern,
     },
   })
 
@@ -65,8 +63,9 @@ export const generateQrCode = form(qrGenerateSchema, async (data) => {
       qrCodeId: qrCode.id,
       foregroundColor: data.foregroundColor || "#000000",
       backgroundColor: data.backgroundColor || "#FFFFFF",
-      pattern: data.pattern || "square",
+      pattern: "square",
       cornerStyle: "square",
+      logoDataUrl: null,
     })
 
     return { success: true, id: qrCode.id, svg, shortCode }
@@ -131,7 +130,6 @@ const updateQrSchema = z.object({
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
     .optional(),
-  pattern: z.enum(["square", "dot", "rounded"]).optional(),
 })
 
 export const updateQrCode = form(updateQrSchema, async (data) => {
@@ -170,13 +168,12 @@ export const updateQrCode = form(updateQrSchema, async (data) => {
       .where(eq(qrCodesTable.id, data.id))
   }
 
-  if (data.foregroundColor || data.backgroundColor || data.pattern) {
+  if (data.foregroundColor || data.backgroundColor) {
     await db
       .update(qrStylesTable)
       .set({
         foregroundColor: data.foregroundColor,
         backgroundColor: data.backgroundColor,
-        pattern: data.pattern,
         updatedAt: new Date(),
       })
       .where(eq(qrStylesTable.qrCodeId, data.id))

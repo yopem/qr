@@ -55,7 +55,6 @@
           description: qrData.description || "",
           foregroundColor: qrData.style?.foregroundColor || "#000000",
           backgroundColor: qrData.style?.backgroundColor || "#FFFFFF",
-          pattern: (qrData.style?.pattern as "square" | "dot" | "rounded") || "square",
         })
         await updatePreview()
       }
@@ -77,7 +76,6 @@
         styles: {
           foregroundColor: fields.foregroundColor,
           backgroundColor: fields.backgroundColor,
-          pattern: fields.pattern,
         },
       })
       previewSvg = svg

@@ -21,15 +21,17 @@
   let { onScan }: Props = $props()
 
   let fileInput: HTMLInputElement | null = $state(null)
+  let dropZone: HTMLDivElement | null = $state(null)
   let scanning = $state(false)
   let scannedUrl = $state<string | null>(null)
   let error = $state<string | null>(null)
+  let isDragging = $state(false)
 
-  async function handleFileChange(e: Event) {
-    const target = e.target as HTMLInputElement
-    const file = target.files?.[0]
-
-    if (!file) return
+  async function processFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      error = "Please upload an image file"
+      return
+    }
 
     scanning = true
     error = null
@@ -48,6 +50,38 @@
       error = err instanceof Error ? err.message : "Failed to scan QR code"
     } finally {
       scanning = false
+    }
+  }
+
+  async function handleFileChange(e: Event) {
+    const target = e.target as HTMLInputElement
+    const file = target.files?.[0]
+
+    if (!file) return
+
+    await processFile(file)
+  }
+
+  function handleDragOver(e: DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    isDragging = true
+  }
+
+  function handleDragLeave(e: DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    isDragging = false
+  }
+
+  async function handleDrop(e: DragEvent) {
+    e.preventDefault()
+    e.stopPropagation()
+    isDragging = false
+
+    const file = e.dataTransfer?.files[0]
+    if (file) {
+      await processFile(file)
     }
   }
 
@@ -81,16 +115,27 @@
         aria-label="Upload QR code image"
       />
 
-      <Button
-        type="button"
-        variant="outline"
+      <div
+        bind:this={dropZone}
+        ondragover={handleDragOver}
+        ondragleave={handleDragLeave}
+        ondrop={handleDrop}
+        class="w-full cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors {isDragging
+          ? 'border-primary bg-primary/5'
+          : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50'}"
         onclick={handleUploadClick}
-        disabled={scanning}
-        class="w-full"
+        role="button"
+        tabindex="0"
+        onkeydown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            handleUploadClick()
+          }
+        }}
       >
         {#if scanning}
           <svg
-            class="mr-2 h-4 w-4 animate-spin"
+            class="mx-auto h-12 w-12 animate-spin text-muted-foreground"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -103,12 +148,15 @@
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             ></path>
           </svg>
-          Scanning...
+          <p class="mt-4 text-sm text-muted-foreground">Scanning QR code...</p>
         {:else}
-          <Upload class="mr-2 h-4 w-4" />
-          Upload QR Code Image
+          <Upload class="mx-auto h-12 w-12 text-muted-foreground" />
+          <p class="mt-4 text-sm font-medium">
+            {isDragging ? "Drop image here" : "Drag and drop or click to upload"}
+          </p>
+          <p class="mt-1 text-xs text-muted-foreground">PNG, JPEG, GIF, WEBP</p>
         {/if}
-      </Button>
+      </div>
 
       {#if scannedUrl}
         <div class="w-full space-y-2 rounded-lg border bg-muted p-4">
@@ -138,12 +186,6 @@
           </Button>
         </div>
       {/if}
-    </div>
-
-    <div class="rounded-lg border p-4">
-      <p class="text-sm text-muted-foreground">
-        <strong>Tip:</strong> Upload a clear image of a QR code. Supported formats: PNG, JPEG, GIF, WEBP.
-      </p>
     </div>
   </CardContent>
 </Card>

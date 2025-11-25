@@ -8,39 +8,25 @@
   } from "$lib/components/ui/card"
   import { Input } from "$lib/components/ui/input"
   import { Label } from "$lib/components/ui/label"
-  import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-  } from "$lib/components/ui/select"
-
-  interface QrFormField {
-    value: () => string | undefined
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    set: (value: any) => void
-    issues: () => Array<{ message: string }> | undefined
-  }
 
   interface Props {
-    /**
-     * The form object from generateQrCode or updateQrCode remote function
-     */
-    form: {
-      fields: {
-        foregroundColor: QrFormField
-        backgroundColor: QrFormField
-        pattern: QrFormField
-      }
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    form: any
   }
 
   let { form }: Props = $props()
 
   let foregroundColor = $state(form.fields.foregroundColor.value() || "#000000")
   let backgroundColor = $state(form.fields.backgroundColor.value() || "#FFFFFF")
-  let selectedPattern = $state<string>(form.fields.pattern.value() || "square")
+
+  $effect(() => {
+    if (!form.fields.foregroundColor.value()) {
+      form.fields.foregroundColor.set("#000000")
+    }
+    if (!form.fields.backgroundColor.value()) {
+      form.fields.backgroundColor.set("#FFFFFF")
+    }
+  })
 
   function updateForeground(e: Event) {
     const target = e.target as HTMLInputElement
@@ -53,17 +39,12 @@
     backgroundColor = target.value
     form.fields.backgroundColor.set(target.value)
   }
-
-  function updatePattern(value: string) {
-    selectedPattern = value
-    form.fields.pattern.set(value)
-  }
 </script>
 
 <Card>
   <CardHeader>
-    <CardTitle>Customize Style</CardTitle>
-    <CardDescription>Adjust the appearance of your QR code</CardDescription>
+    <CardTitle>Customize Colors</CardTitle>
+    <CardDescription>Choose colors for your QR code</CardDescription>
   </CardHeader>
 
   <CardContent class="space-y-4">
@@ -113,25 +94,6 @@
           <p class="text-sm text-destructive">{issue.message}</p>
         {/each}
       </div>
-    </div>
-
-    <div class="space-y-2">
-      <Label for="pattern">Pattern Style</Label>
-      <Select type="single" value={selectedPattern} onValueChange={updatePattern}>
-        <SelectTrigger id="pattern" class="w-full">
-          <span class="capitalize">{selectedPattern}</span>
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            <SelectItem value="square">Square</SelectItem>
-            <SelectItem value="dot">Dots</SelectItem>
-            <SelectItem value="rounded">Rounded</SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      {#each form.fields.pattern.issues() || [] as issue (issue.message)}
-        <p class="text-sm text-destructive">{issue.message}</p>
-      {/each}
     </div>
 
     <div class="rounded-lg border p-4">

@@ -10,6 +10,15 @@
     CardHeader,
     CardTitle,
   } from "$lib/components/ui/card"
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+  } from "$lib/components/ui/dialog"
   import type { QrCode } from "$lib/server/db/schema/qr-codes"
 
   interface Props {
@@ -19,6 +28,8 @@
   }
 
   let { qrCode, onEdit, onDelete }: Props = $props()
+
+  let dialogOpen = $state(false)
 
   function formatDate(date: Date | null): string {
     if (!date) return "N/A"
@@ -33,6 +44,11 @@
     if (qrCode.shortCode) {
       navigator.clipboard.writeText(`${window.location.origin}/${qrCode.shortCode}`)
     }
+  }
+
+  function handleConfirmDelete() {
+    onDelete?.(qrCode.id)
+    dialogOpen = false
   }
 </script>
 
@@ -107,9 +123,26 @@
         Edit
       </Button>
     {/if}
-    <Button variant="destructive" size="sm" onclick={() => onDelete?.(qrCode.id)} class="flex-1">
-      <Trash2 class="mr-2 h-4 w-4" />
-      Delete
-    </Button>
+    <Dialog bind:open={dialogOpen}>
+      <DialogTrigger>
+        <Button variant="destructive" size="sm" class="flex-1">
+          <Trash2 class="mr-2 h-4 w-4" />
+          Delete
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete QR Code</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete "{qrCode.title || "this QR code"}"? This action cannot
+            be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onclick={() => (dialogOpen = false)}>Cancel</Button>
+          <Button variant="destructive" onclick={handleConfirmDelete}>Delete</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </CardFooter>
 </Card>

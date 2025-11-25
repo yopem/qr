@@ -1,9 +1,18 @@
 <script lang="ts">
   import QrGenerator from "$lib/components/qr/qr-generator.svelte"
   import QrScanner from "$lib/components/qr/qr-scanner.svelte"
+  import Features from "$lib/components/ui/features.svelte"
   import { Tabs, TabsContent, TabsList, TabsTrigger } from "$lib/components/ui/tabs"
 
   let { data } = $props()
+
+  let activeTab = $state("generate")
+  let scannedUrl = $state<string | undefined>(undefined)
+
+  function handleScan(url: string) {
+    scannedUrl = url
+    activeTab = "generate"
+  }
 </script>
 
 <div class="container mx-auto max-w-7xl px-4 py-8">
@@ -13,14 +22,14 @@
       <p class="text-lg text-muted-foreground">Create, customize, and scan QR codes for free</p>
     </div>
 
-    <Tabs value="generate" class="w-full">
+    <Tabs bind:value={activeTab} class="w-full">
       <TabsList class="grid w-full grid-cols-2">
         <TabsTrigger value="generate">Generate</TabsTrigger>
         <TabsTrigger value="scan">Scan</TabsTrigger>
       </TabsList>
 
       <TabsContent value="generate" class="space-y-6">
-        <QrGenerator showModeTabs={!data.user} />
+        <QrGenerator showModeTabs={!data.user} initialUrl={scannedUrl} />
 
         {#if !data.user}
           <div class="rounded-lg border bg-muted p-4 text-center">
@@ -35,13 +44,11 @@
 
       <TabsContent value="scan" class="space-y-6">
         <div class="mx-auto max-w-md">
-          <QrScanner
-            onScan={(url) => {
-              console.log("Scanned URL:", url)
-            }}
-          />
+          <QrScanner onScan={handleScan} />
         </div>
       </TabsContent>
     </Tabs>
   </div>
 </div>
+
+<Features />

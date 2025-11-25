@@ -1,11 +1,16 @@
 <script lang="ts">
-  import { Plus } from "@lucide/svelte"
+  import { Plus, Search } from "@lucide/svelte"
   import { goto } from "$app/navigation"
   import QrCard from "$lib/components/qr/qr-card.svelte"
   import { Button } from "$lib/components/ui/button"
+  import { Input } from "$lib/components/ui/input"
+  import { Select, SelectContent, SelectItem, SelectTrigger } from "$lib/components/ui/select"
   import { toast } from "svelte-sonner"
 
   import { deleteQrCode, getUserQrCodes } from "../qr-codes.remote.js"
+
+  let searchQuery = $state("")
+  let sortBy = $state<"newest" | "oldest" | "name">("newest")
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this QR code?")) {
@@ -23,6 +28,33 @@
 
   function handleEdit(id: string) {
     goto(`/dashboard/edit/${id}`)
+  }
+
+  function filterAndSortQrCodes(qrCodes: Awaited<ReturnType<typeof getUserQrCodes>>) {
+    let filtered = qrCodes
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      filtered = filtered.filter(
+        (qr) =>
+          qr.title?.toLowerCase().includes(query) ||
+          qr.destinationUrl.toLowerCase().includes(query) ||
+          qr.shortCode?.toLowerCase().includes(query),
+      )
+    }
+
+    // Sort
+    const sorted = [...filtered]
+    if (sortBy === "newest") {
+      sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    } else if (sortBy === "oldest") {
+      sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    } else if (sortBy === "name") {
+      sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""))
+    }
+
+    return sorted
   }
 </script>
 
@@ -77,11 +109,59 @@
           </div>
         </div>
       {:else}
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {#each qrCodes as qrCode (qrCode.id)}
-            <QrCard {qrCode} onEdit={handleEdit} onDelete={handleDelete} />
-          {/each}
+        <!-- Search and Filter Controls -->
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="relative max-w-sm flex-1">
+            <Search
+              class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              type="text"
+              placeholder="Search by title, URL, or short code..."
+              bind:value={searchQuery}
+              class="pl-9"
+            />
+          </div>
+          <Select
+            type="single"
+            value={sortBy}
+            onValueChange={(v) => {
+              if (v) sortBy = v as typeof sortBy
+            }}
+          >
+            <SelectTrigger class="w-full sm:w-[180px]">
+              <span
+                >Sort: {sortBy === "newest"
+                  ? "Newest"
+                  : sortBy === "oldest"
+                    ? "Oldest"
+                    : "Name"}</span
+              >
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="oldest">Oldest First</SelectItem>
+              <SelectItem value="name">Name (A-Z)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+
+        {@const filteredQrCodes = filterAndSortQrCodes(qrCodes)}
+
+        {#if filteredQrCodes.length === 0}
+          <div class="rounded-lg border border-dashed p-8 text-center">
+            <p class="text-muted-foreground">No QR codes match your search.</p>
+            <Button variant="ghost" onclick={() => (searchQuery = "")} class="mt-4">
+              Clear Search
+            </Button>
+          </div>
+        {:else}
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {#each filteredQrCodes as qrCode (qrCode.id)}
+              <QrCard {qrCode} onEdit={handleEdit} onDelete={handleDelete} />
+            {/each}
+          </div>
+        {/if}
       {/if}
     {:catch error}
       <div class="rounded-lg border border-destructive bg-destructive/10 p-8 text-center">

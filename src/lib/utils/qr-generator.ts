@@ -3,9 +3,6 @@ import QRCode from "qrcode"
 export interface QrStyleOptions {
   foregroundColor?: string
   backgroundColor?: string
-  pattern?: "square" | "dot" | "rounded"
-  cornerStyle?: "square" | "rounded" | "extra-rounded"
-  logoDataUrl?: string
 }
 
 export interface GenerateQrOptions {
@@ -32,38 +29,12 @@ export async function generateQrCodeSvg(options: GenerateQrOptions): Promise<str
       margin: 2,
     })
 
-    return applyStyleCustomizations(svgString, styles)
+    return svgString
   } catch (error) {
     throw new Error(
       `Failed to generate QR code: ${error instanceof Error ? error.message : "Unknown error"}`,
     )
   }
-}
-
-function applyStyleCustomizations(svgString: string, styles: QrStyleOptions): string {
-  let customizedSvg = svgString
-
-  if (styles.pattern === "dot") {
-    customizedSvg = customizedSvg.replace(
-      /<rect([^>]*?)width="(\d+)"([^>]*?)height="(\d+)"([^>]*?)\/>/g,
-      (match, before, width, middle, _height, after) => {
-        const size = parseInt(width)
-        const radius = size / 2
-        const xMatch = match.match(/x="(\d+)"/)
-        const yMatch = match.match(/y="(\d+)"/)
-        if (xMatch && yMatch) {
-          const cx = parseInt(xMatch[1]) + radius
-          const cy = parseInt(yMatch[1]) + radius
-          return `<circle cx="${cx}" cy="${cy}" r="${radius}"${before}${middle}${after}/>`
-        }
-        return match
-      },
-    )
-  } else if (styles.pattern === "rounded") {
-    customizedSvg = customizedSvg.replace(/<rect/g, '<rect rx="2" ry="2"')
-  }
-
-  return customizedSvg
 }
 
 export function validateQrOptions(options: GenerateQrOptions): {
