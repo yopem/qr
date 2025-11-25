@@ -8,6 +8,13 @@
       "when": 1763982113016,
       "tag": "0000_safe_living_lightning",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1763990539086,
+      "tag": "0001_opposite_makkari",
+      "breakpoints": true
     }
   ]
 }

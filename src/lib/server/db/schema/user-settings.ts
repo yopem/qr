@@ -1,6 +1,7 @@
-import { createCustomId } from "$lib/utils/custom-id"
 import { pgTable, text, timestamp } from "drizzle-orm/pg-core"
 import { createInsertSchema, createUpdateSchema } from "drizzle-zod"
+
+import { createCustomId } from "../../../utils/custom-id"
 
 export const userSettingsTable = pgTable("user_settings", {
   id: text()
