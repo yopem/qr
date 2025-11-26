@@ -2,7 +2,15 @@
   import { Pencil, Trash2 } from "@lucide/svelte"
   import { Badge } from "$lib/components/ui/badge"
   import { Button } from "$lib/components/ui/button"
-  import { Checkbox } from "$lib/components/ui/checkbox"
+  import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+  } from "$lib/components/ui/dialog"
   import {
     Table,
     TableBody,
@@ -18,23 +26,14 @@
 
   interface Props {
     qrCodes: QrCode[]
-    selectedIds: Set<string>
     onEdit?: (id: string) => void
     onDelete?: (id: string) => void
-    onToggleSelect?: (id: string) => void
-    onToggleSelectAll?: () => void
   }
 
-  let { qrCodes, selectedIds, onEdit, onDelete, onToggleSelect, onToggleSelectAll }: Props =
-    $props()
+  let { qrCodes, onEdit, onDelete }: Props = $props()
 
   let qrSvgCache = $state<Record<string, string>>({})
-
-  const isAllSelected = $derived(
-    qrCodes.length > 0 && qrCodes.every((qr) => selectedIds.has(qr.id)),
-  )
-
-  const isSomeSelected = $derived(qrCodes.some((qr) => selectedIds.has(qr.id)) && !isAllSelected)
+  let deleteDialogOpen = $state<string | null>(null)
 
   $effect(() => {
     qrCodes.forEach((qrCode) => {
@@ -59,20 +58,17 @@
       year: "numeric",
     }).format(new Date(date))
   }
+
+  function handleConfirmDelete(qrCode: QrCode) {
+    onDelete?.(qrCode.id)
+    deleteDialogOpen = null
+  }
 </script>
 
 <div class="rounded-md border">
   <Table>
     <TableHeader>
       <TableRow>
-        <TableHead class="w-12">
-          <Checkbox
-            checked={isAllSelected}
-            indeterminate={isSomeSelected}
-            onchange={onToggleSelectAll}
-            aria-label="Select all"
-          />
-        </TableHead>
         <TableHead class="w-24">QR Code</TableHead>
         <TableHead>URL</TableHead>
         <TableHead class="hidden md:table-cell">Type</TableHead>
@@ -83,14 +79,7 @@
     </TableHeader>
     <TableBody>
       {#each qrCodes as qrCode (qrCode.id)}
-        <TableRow class={selectedIds.has(qrCode.id) ? "bg-muted/50" : ""}>
-          <TableCell>
-            <Checkbox
-              checked={selectedIds.has(qrCode.id)}
-              onchange={() => onToggleSelect?.(qrCode.id)}
-              aria-label="Select QR code"
-            />
-          </TableCell>
+        <TableRow>
           <TableCell>
             <div class="flex h-16 w-16 items-center justify-center rounded border bg-white p-2">
               {#if qrSvgCache[qrCode.id]}
@@ -134,15 +123,38 @@
                   <span class="sr-only">Edit</span>
                 </Button>
               {/if}
-              <Button
-                variant="ghost"
-                size="icon"
-                class="h-8 w-8 text-destructive hover:bg-destructive/10"
-                onclick={() => onDelete?.(qrCode.id)}
-              >
-                <Trash2 class="h-4 w-4" />
-                <span class="sr-only">Delete</span>
-              </Button>
+              <Dialog open={deleteDialogOpen === qrCode.id}>
+                <DialogTrigger>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    class="h-8 w-8 text-destructive hover:bg-destructive/10"
+                    onclick={() => (deleteDialogOpen = qrCode.id)}
+                  >
+                    <Trash2 class="h-4 w-4" />
+                    <span class="sr-only">Delete</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete QR Code</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete this QR code? This action cannot be undone.
+                      {#if qrCode.type === "dynamic"}
+                        The short URL will stop working.
+                      {/if}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onclick={() => (deleteDialogOpen = null)}>
+                      Cancel
+                    </Button>
+                    <Button variant="destructive" onclick={() => handleConfirmDelete(qrCode)}>
+                      Delete
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </TableCell>
         </TableRow>

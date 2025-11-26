@@ -1,27 +1,16 @@
 <script lang="ts">
   import { CalendarIcon, LayoutGrid, LayoutList, Plus, Search, X } from "@lucide/svelte"
   import { goto } from "$app/navigation"
-  import BulkActionsBar from "$lib/components/qr/bulk-actions-bar.svelte"
   import QrCard from "$lib/components/qr/qr-card.svelte"
   import QrListView from "$lib/components/qr/qr-list-view.svelte"
   import { Button } from "$lib/components/ui/button"
-  import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-  } from "$lib/components/ui/dialog"
   import { Input } from "$lib/components/ui/input"
   import { Popover, PopoverContent, PopoverTrigger } from "$lib/components/ui/popover"
   import { Select, SelectContent, SelectItem, SelectTrigger } from "$lib/components/ui/select"
-  import { Slider } from "$lib/components/ui/slider"
-  import { generateQrCodeSvg, generateQrFilename } from "$lib/utils/qr-generator"
   import { onMount } from "svelte"
   import { toast } from "svelte-sonner"
 
-  import { bulkDeleteQrCodes, deleteQrCode, getUserQrCodes } from "../qr-codes.remote.js"
+  import { deleteQrCode, getUserQrCodes } from "../qr-codes.remote.js"
 
   let searchQuery = $state("")
   let sortBy = $state<"newest" | "oldest" | "name">("newest")
@@ -31,14 +20,6 @@
     start: "",
     end: "",
   })
-  let minScans = $state(0)
-  let selectedIds = $state<Set<string>>(new Set())
-  let deleteDialogOpen = $state(false)
-  let qrCodesData = $state<Awaited<ReturnType<typeof getUserQrCodes>>>([])
-
-  const maxScans = $derived(
-    qrCodesData.length > 0 ? Math.max(...qrCodesData.map((qr) => qr.scanCount || 0), 10) : 10,
-  )
 
   onMount(() => {
     const saved = localStorage.getItem("dashboard-view-mode")
@@ -51,163 +32,14 @@
     localStorage.setItem("dashboard-view-mode", viewMode)
   })
 
-  // Keyboard shortcuts
-  $effect(() => {
-    function handleKeydown(e: KeyboardEvent) {
-      // Ignore if user is typing in an input field
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        e.target instanceof HTMLSelectElement
-      ) {
-        return
-      }
-
-      // Ctrl/Cmd+A: Select all visible QR codes
-      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
-        e.preventDefault()
-        const filteredQrCodes = filterAndSortQrCodes(qrCodesData)
-        if (filteredQrCodes.length > 0) {
-          toggleSelectAll()
-        }
-      }
-
-      // Delete key: Open bulk delete confirmation (only when items selected)
-      if (e.key === "Delete" && selectedIds.size > 0) {
-        e.preventDefault()
-        handleBulkDelete()
-      }
-
-      // Escape: Clear selection
-      if (e.key === "Escape" && selectedIds.size > 0) {
-        e.preventDefault()
-        clearSelection()
-      }
-    }
-
-    window.addEventListener("keydown", handleKeydown)
-
-    return () => {
-      window.removeEventListener("keydown", handleKeydown)
-    }
-  })
-
   function toggleViewMode() {
     viewMode = viewMode === "list" ? "grid" : "list"
   }
 
-  function toggleSelect(id: string) {
-    if (selectedIds.has(id)) {
-      selectedIds.delete(id)
-    } else {
-      selectedIds.add(id)
-    }
-    selectedIds = selectedIds
-  }
-
-  function toggleSelectAll() {
-    const filteredQrCodes = filterAndSortQrCodes(qrCodesData)
-    if (filteredQrCodes.every((qr) => selectedIds.has(qr.id))) {
-      filteredQrCodes.forEach((qr) => selectedIds.delete(qr.id))
-    } else {
-      filteredQrCodes.forEach((qr) => selectedIds.add(qr.id))
-    }
-    selectedIds = selectedIds
-  }
-
-  function clearSelection() {
-    selectedIds.clear()
-    selectedIds = selectedIds
-  }
-
-  async function handleBulkDelete() {
-    if (selectedIds.size === 0) return
-    deleteDialogOpen = true
-  }
-
-  async function confirmBulkDelete() {
-    try {
-      const ids = Array.from(selectedIds)
-      const result = await bulkDeleteQrCodes(ids).updates(getUserQrCodes())
-
-      if (result.succeeded > 0) {
-        toast.success(`${result.succeeded} QR code${result.succeeded > 1 ? "s" : ""} deleted`)
-      }
-      if (result.failed > 0) {
-        toast.error(`Failed to delete ${result.failed} QR code${result.failed > 1 ? "s" : ""}`)
-      }
-
-      clearSelection()
-      deleteDialogOpen = false
-    } catch (error) {
-      toast.error("Failed to delete QR codes")
-      console.error(error)
-    }
-  }
-
-  async function handleBulkExport() {
-    if (selectedIds.size === 0) return
-
-    const selectedQrCodes = qrCodesData.filter((qr) => selectedIds.has(qr.id))
-
-    if (selectedQrCodes.length > 20) {
-      if (
-        !confirm(
-          `You are about to download ${selectedQrCodes.length} files. This may take a while. Continue?`,
-        )
-      ) {
-        return
-      }
-    }
-
-    toast.info(`Downloading ${selectedQrCodes.length} QR codes...`)
-
-    let succeeded = 0
-    let failed = 0
-
-    for (const qrCode of selectedQrCodes) {
-      try {
-        const svg = await generateQrCodeSvg({
-          url: qrCode.destinationUrl,
-          size: 500,
-        })
-
-        const blob = new Blob([svg], { type: "image/svg+xml" })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = generateQrFilename(qrCode.title || undefined, qrCode.shortCode || undefined)
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-
-        succeeded++
-        await new Promise((resolve) => setTimeout(resolve, 200))
-      } catch (error) {
-        console.error(`Failed to export QR code ${qrCode.id}:`, error)
-        failed++
-      }
-    }
-
-    if (succeeded > 0) {
-      toast.success(`${succeeded} QR code${succeeded > 1 ? "s" : ""} downloaded`)
-    }
-    if (failed > 0) {
-      toast.error(`Failed to download ${failed} QR code${failed > 1 ? "s" : ""}`)
-    }
-  }
-
   async function handleDelete(id: string) {
-    if (!confirm("Are you sure you want to delete this QR code?")) {
-      return
-    }
-
     try {
       await deleteQrCode(id).updates(getUserQrCodes())
       toast.success("QR code deleted successfully")
-      selectedIds.delete(id)
-      selectedIds = selectedIds
     } catch (error) {
       toast.error("Failed to delete QR code")
       console.error(error)
@@ -243,10 +75,6 @@
       filtered = filtered.filter((qr) => new Date(qr.createdAt) <= endOfDay)
     }
 
-    if (minScans > 0) {
-      filtered = filtered.filter((qr) => (qr.scanCount || 0) >= minScans)
-    }
-
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(
@@ -273,15 +101,13 @@
     searchQuery = ""
     filterType = "all"
     dateRange = { start: "", end: "" }
-    minScans = 0
   }
 
   const hasActiveFilters = $derived(
     searchQuery.trim() !== "" ||
       filterType !== "all" ||
       dateRange.start !== "" ||
-      dateRange.end !== "" ||
-      minScans > 0,
+      dateRange.end !== "",
   )
 </script>
 
@@ -445,17 +271,6 @@
               </PopoverContent>
             </Popover>
 
-            <div class="flex items-center gap-3">
-              <span class="text-sm font-medium">Min Scans: {minScans}</span>
-              <Slider
-                type="single"
-                bind:value={minScans}
-                max={maxScans}
-                step={1}
-                class="w-[200px]"
-              />
-            </div>
-
             {#if hasActiveFilters}
               <Button variant="ghost" size="sm" onclick={clearFilters}>
                 <X class="mr-1 h-4 w-4" />
@@ -466,14 +281,6 @@
         </div>
 
         {@const filteredQrCodes = filterAndSortQrCodes(qrCodes)}
-        {((qrCodesData = qrCodes), "")}
-
-        <BulkActionsBar
-          selectedCount={selectedIds.size}
-          onDelete={handleBulkDelete}
-          onExport={handleBulkExport}
-          onClearSelection={clearSelection}
-        />
 
         {#if filteredQrCodes.length === 0}
           <div class="rounded-lg border border-dashed p-8 text-center">
@@ -481,14 +288,7 @@
             <Button variant="ghost" onclick={clearFilters} class="mt-4">Clear Filters</Button>
           </div>
         {:else if viewMode === "list"}
-          <QrListView
-            qrCodes={filteredQrCodes}
-            {selectedIds}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onToggleSelect={toggleSelect}
-            onToggleSelectAll={toggleSelectAll}
-          />
+          <QrListView qrCodes={filteredQrCodes} onEdit={handleEdit} onDelete={handleDelete} />
         {:else}
           <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {#each filteredQrCodes as qrCode (qrCode.id)}
@@ -507,26 +307,3 @@
     {/await}
   </div>
 </div>
-
-<Dialog bind:open={deleteDialogOpen}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Delete {selectedIds.size} QR Code{selectedIds.size > 1 ? "s" : ""}?</DialogTitle>
-      <DialogDescription>
-        This action cannot be undone. This will permanently delete the selected QR code{selectedIds.size >
-        1
-          ? "s"
-          : ""} and remove {selectedIds.size > 1 ? "their" : "its"} data from the server.
-        {#if Array.from(selectedIds).some((id) => qrCodesData.find((qr) => qr.id === id)?.type === "dynamic")}
-          <span class="mt-2 block font-medium text-destructive">
-            Warning: Some selected QR codes are dynamic. Their short URLs will stop working.
-          </span>
-        {/if}
-      </DialogDescription>
-    </DialogHeader>
-    <DialogFooter>
-      <Button variant="outline" onclick={() => (deleteDialogOpen = false)}>Cancel</Button>
-      <Button variant="destructive" onclick={confirmBulkDelete}>Delete</Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
