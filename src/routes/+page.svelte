@@ -11,6 +11,10 @@
 
   function handleScan(url: string) {
     scannedUrl = url
+  }
+
+  function handleGenerateQr(url: string) {
+    scannedUrl = url
     activeTab = "generate"
   }
 </script>
@@ -43,9 +47,7 @@
       </TabsContent>
 
       <TabsContent value="scan" class="space-y-6">
-        <div class="mx-auto max-w-md">
-          <QrScanner onScan={handleScan} />
-        </div>
+        <QrScanner onScan={handleScan} onGenerateQr={handleGenerateQr} />
       </TabsContent>
     </Tabs>
   </div>
