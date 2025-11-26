@@ -9,7 +9,6 @@ import { z } from "zod"
 
 const qrGenerateSchema = z.object({
   destinationUrl: z.string().min(1),
-  title: z.string().max(100).optional(),
   description: z.string().max(500).optional(),
   type: z.enum(["static", "dynamic"]),
   foregroundColor: z
@@ -53,7 +52,6 @@ export const generateQrCode = form(qrGenerateSchema, async (data) => {
         userId: session.id,
         shortCode,
         destinationUrl: data.destinationUrl,
-        title: data.title,
         description: data.description,
         type: data.type,
       })
@@ -120,7 +118,6 @@ export const getQrCode = query(z.string(), async (id) => {
 const updateQrSchema = z.object({
   id: z.string(),
   destinationUrl: z.string().optional(),
-  title: z.string().optional(),
   description: z.string().optional(),
   foregroundColor: z
     .string()
@@ -156,12 +153,11 @@ export const updateQrCode = form(updateQrSchema, async (data) => {
     error(400, "Cannot change URL of static QR code")
   }
 
-  if (data.destinationUrl || data.title || data.description) {
+  if (data.destinationUrl || data.description) {
     await db
       .update(qrCodesTable)
       .set({
         destinationUrl: data.destinationUrl,
-        title: data.title,
         description: data.description,
         updatedAt: new Date(),
       })
@@ -209,4 +205,35 @@ export const deleteQrCode = command(z.string(), async (id) => {
   await getUserQrCodes().refresh()
 
   return { success: true }
+})
+
+export const bulkDeleteQrCodes = command(z.array(z.string()), async (ids) => {
+  const event = getRequestEvent()
+  const session = event.locals.session
+
+  if (!session) {
+    error(401, "Authentication required")
+  }
+
+  const results = await Promise.allSettled(
+    ids.map(async (id) => {
+      const qrCode = await db.query.qrCodesTable.findFirst({
+        where: eq(qrCodesTable.id, id),
+      })
+
+      if (!qrCode || qrCode.userId !== session.id) {
+        throw new Error(`Cannot delete QR code: ${id}`)
+      }
+
+      await db.delete(qrCodesTable).where(eq(qrCodesTable.id, id))
+      return id
+    }),
+  )
+
+  const succeeded = results.filter((r) => r.status === "fulfilled").length
+  const failed = results.filter((r) => r.status === "rejected").length
+
+  await getUserQrCodes().refresh()
+
+  return { succeeded, failed }
 })

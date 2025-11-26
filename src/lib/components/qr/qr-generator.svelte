@@ -157,19 +157,6 @@
 
         {#if qrType === "dynamic"}
           <div class="space-y-2">
-            <Label for="title">Title (Optional)</Label>
-            <Input
-              {...generateQrCode.fields.title.as("text")}
-              id="title"
-              placeholder="My QR Code"
-              maxlength={100}
-            />
-            {#each generateQrCode.fields.title.issues() as issue (issue.message)}
-              <p class="text-sm text-destructive">{issue.message}</p>
-            {/each}
-          </div>
-
-          <div class="space-y-2">
             <Label for="description">Description (Optional)</Label>
             <Textarea
               {...generateQrCode.fields.description.as("text")}

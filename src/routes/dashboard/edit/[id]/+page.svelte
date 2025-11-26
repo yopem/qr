@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { ArrowLeft, Download, Save } from "@lucide/svelte"
+  import { ArrowLeft, ChevronRight, Download, Save } from "@lucide/svelte"
   import { goto } from "$app/navigation"
   import QrCustomizer from "$lib/components/qr/qr-customizer.svelte"
   import { Button } from "$lib/components/ui/button"
@@ -51,7 +51,6 @@
         updateQrCode.fields.set({
           id: qrData.id,
           destinationUrl: qrData.destinationUrl,
-          title: qrData.title || "",
           description: qrData.description || "",
           foregroundColor: qrData.style?.foregroundColor || "#000000",
           backgroundColor: qrData.style?.backgroundColor || "#FFFFFF",
@@ -135,6 +134,14 @@
 
 <div class="container mx-auto max-w-5xl px-4 py-8">
   <div class="space-y-6">
+    <nav class="flex items-center gap-2 text-sm text-muted-foreground">
+      <a href="/" class="hover:text-foreground">Home</a>
+      <ChevronRight class="h-4 w-4" />
+      <a href="/dashboard" class="hover:text-foreground">Dashboard</a>
+      <ChevronRight class="h-4 w-4" />
+      <span class="text-foreground">Edit</span>
+    </nav>
+
     <div class="flex items-center gap-4">
       <Button variant="ghost" size="icon" onclick={() => goto("/dashboard")}>
         <ArrowLeft class="h-4 w-4" />
@@ -186,19 +193,6 @@
                     oninput={handleFieldChange}
                   />
                   {#each updateQrCode.fields.destinationUrl.issues() as issue (issue.message)}
-                    <p class="text-sm text-destructive">{issue.message}</p>
-                  {/each}
-                </div>
-
-                <div class="space-y-2">
-                  <Label for="title">Title (Optional)</Label>
-                  <Input
-                    {...updateQrCode.fields.title.as("text")}
-                    id="title"
-                    placeholder="My QR Code"
-                    maxlength={100}
-                  />
-                  {#each updateQrCode.fields.title.issues() as issue (issue.message)}
                     <p class="text-sm text-destructive">{issue.message}</p>
                   {/each}
                 </div>
