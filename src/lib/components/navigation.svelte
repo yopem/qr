@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Moon, Sun } from "@lucide/svelte"
-  import logo from "$lib/assets/logo.png"
   import LoginButton from "$lib/components/auth/login-button.svelte"
   import LogoutButton from "$lib/components/auth/logout-button.svelte"
+  import Logo from "$lib/components/logo.svelte"
   import { Button } from "$lib/components/ui/button"
 
   interface Props {
@@ -53,9 +53,9 @@
     <div class="flex items-center gap-6">
       <div class="flex items-center gap-2">
         <a href="https://yopem.com" class="flex items-center">
-          <img src={logo} alt="Yopem Logo" class="size-8" />
+          <Logo class="size-8" />
         </a>
-        <span class="text-xl font-bold">/</span>
+        <span class="text-xl">/</span>
         <a href="/" class="flex items-center">
           <span class="gap-1 text-xl font-bold hover:text-foreground/80">QR</span>
         </a>

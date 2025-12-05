@@ -1,7 +1,7 @@
 <script lang="ts">
+  import Features from "$lib/components/features.svelte"
   import QrGenerator from "$lib/components/qr/qr-generator.svelte"
   import QrScanner from "$lib/components/qr/qr-scanner.svelte"
-  import Features from "$lib/components/ui/features.svelte"
   import { Tabs, TabsContent, TabsList, TabsTrigger } from "$lib/components/ui/tabs"
 
   let { data } = $props()
