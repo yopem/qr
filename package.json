@@ -8,6 +8,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "db:check": "drizzle-kit check",
     "db:drop": "drizzle-kit drop",
