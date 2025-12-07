@@ -21,6 +21,9 @@
     end: "",
   })
   let isDeleting = $state(false)
+  let datePickerOpen = $state(false)
+  let filterSelectOpen = $state(false)
+  let sortSelectOpen = $state(false)
 
   onMount(() => {
     const saved = localStorage.getItem("dashboard-view-mode")
@@ -200,6 +203,8 @@
             <Select
               type="single"
               value={filterType}
+              open={filterSelectOpen}
+              onOpenChange={(open) => (filterSelectOpen = open)}
               onValueChange={(v) => {
                 if (v) filterType = v as typeof filterType
               }}
@@ -222,6 +227,8 @@
             <Select
               type="single"
               value={sortBy}
+              open={sortSelectOpen}
+              onOpenChange={(open) => (sortSelectOpen = open)}
               onValueChange={(v) => {
                 if (v) sortBy = v as typeof sortBy
               }}
@@ -245,7 +252,7 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-4">
-          <Popover>
+          <Popover open={datePickerOpen} onOpenChange={(open) => (datePickerOpen = open)}>
             <PopoverTrigger>
               <Button variant="outline" class="gap-2">
                 <CalendarIcon class="h-4 w-4" />

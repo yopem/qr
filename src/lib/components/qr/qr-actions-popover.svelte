@@ -12,10 +12,14 @@
 
   let { qrCode }: Props = $props()
 
+  let open = $state(false)
+
   async function handleDownload() {
     try {
       const svg = await generateQrCodeSvg({
-        url: qrCode.destinationUrl,
+        url: qrCode.shortCode
+          ? `${window.location.origin}/${qrCode.shortCode}`
+          : qrCode.destinationUrl,
         size: 500,
       })
 
@@ -49,7 +53,7 @@
   }
 </script>
 
-<Popover>
+<Popover {open} onOpenChange={(o) => (open = o)}>
   <PopoverTrigger>
     <Button variant="ghost" size="icon" class="h-8 w-8">
       <ExternalLink class="h-4 w-4" />
