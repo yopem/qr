@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ArrowLeft, ChevronRight, Download, Save } from "@lucide/svelte"
+  import { enhance } from "$app/forms"
   import { goto } from "$app/navigation"
-  import QrCustomizer from "$lib/components/qr/qr-customizer.svelte"
   import { Button } from "$lib/components/ui/button"
   import {
     Card,
@@ -16,65 +16,28 @@
   import { generateQrCodeSvg } from "$lib/utils/qr-generator"
   import { toast } from "svelte-sonner"
 
-  import { getQrCode, updateQrCode } from "../../../qr-codes.remote.js"
-
-  interface QrCodeData {
-    id: string
-    shortCode: string | null
-    destinationUrl: string
-    title: string | null
-    description: string | null
-    scanCount: number
-    lastScannedAt: Date | null
-    style?: {
-      foregroundColor: string
-      backgroundColor: string
-      pattern: string
-    }
-  }
-
   let { data } = $props()
 
-  let qrData = $state<QrCodeData | null>(null)
+  let destinationUrl = $state(data.qrCode.destinationUrl)
+  let description = $state(data.qrCode.description || "")
+  let foregroundColor = $state(data.qrCode.style?.foregroundColor || "#000000")
+  let backgroundColor = $state(data.qrCode.style?.backgroundColor || "#FFFFFF")
   let previewSvg = $state<string | null>(null)
   let loading = $state(false)
 
   $effect(() => {
-    loadQrCode()
+    updatePreview()
   })
 
-  async function loadQrCode() {
-    try {
-      qrData = await getQrCode(data.qrCodeId)
-
-      if (qrData) {
-        updateQrCode.fields.set({
-          id: qrData.id,
-          destinationUrl: qrData.destinationUrl,
-          description: qrData.description || "",
-          foregroundColor: qrData.style?.foregroundColor || "#000000",
-          backgroundColor: qrData.style?.backgroundColor || "#FFFFFF",
-        })
-        await updatePreview()
-      }
-    } catch (error) {
-      toast.error("Failed to load QR code")
-      console.error(error)
-    }
-  }
-
   async function updatePreview() {
-    if (!qrData) return
-
     try {
-      const fields = updateQrCode.fields.value()
       const svg = await generateQrCodeSvg({
-        url: qrData.shortCode
-          ? `${window.location.origin}/${qrData.shortCode}`
-          : qrData.destinationUrl,
+        url: data.qrCode.shortCode
+          ? `${window.location.origin}/${data.qrCode.shortCode}`
+          : destinationUrl,
         styles: {
-          foregroundColor: fields.foregroundColor,
-          backgroundColor: fields.backgroundColor,
+          foregroundColor,
+          backgroundColor,
         },
       })
       previewSvg = svg
@@ -88,28 +51,23 @@
   }
 
   function handleDownload() {
-    if (!previewSvg || !qrData) return
+    if (!previewSvg) return
 
-    const filename = `qr-code-${qrData.title || qrData.shortCode || "download"}.png`
+    const filename = `qr-code-${data.qrCode.title || data.qrCode.shortCode || "download"}.png`
 
-    // Convert SVG to PNG
     const canvas = document.createElement("canvas")
     const ctx = canvas.getContext("2d")
     const img = new Image()
 
-    // Set canvas size (higher resolution for better quality)
     canvas.width = 1000
     canvas.height = 1000
 
     img.onload = () => {
       if (ctx) {
-        // Fill white background
         ctx.fillStyle = "#FFFFFF"
         ctx.fillRect(0, 0, canvas.width, canvas.height)
-        // Draw image
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
 
-        // Convert to PNG and download
         canvas.toBlob((blob) => {
           if (blob) {
             const downloadUrl = URL.createObjectURL(blob)
@@ -125,7 +83,6 @@
       }
     }
 
-    // Create SVG blob and convert to data URL
     const svgBlob = new Blob([previewSvg], { type: "image/svg+xml;charset=utf-8" })
     const svgUrl = URL.createObjectURL(svgBlob)
     img.src = svgUrl
@@ -152,134 +109,172 @@
       </div>
     </div>
 
-    {#if !qrData}
-      <div class="grid gap-6 md:grid-cols-2">
-        <div class="h-96 animate-pulse rounded-lg bg-muted"></div>
-        <div class="h-96 animate-pulse rounded-lg bg-muted"></div>
-      </div>
-    {:else}
-      <form
-        {...updateQrCode.enhance(async ({ submit }) => {
-          loading = true
-          try {
-            await submit()
+    <form
+      method="POST"
+      action="?/updateQrCode"
+      use:enhance={() => {
+        loading = true
+        return async ({ update, result }) => {
+          loading = false
+          await update()
+          if (result.type === "success") {
             toast.success("QR code updated successfully")
-            goto("/dashboard")
-          } catch (error) {
+            setTimeout(() => goto("/dashboard"), 500)
+          } else {
             toast.error("Failed to update QR code")
-            console.error(error)
-          } finally {
-            loading = false
           }
-        })}
-      >
-        <div class="grid gap-6 md:grid-cols-2">
-          <div class="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>QR Code Details</CardTitle>
-                <CardDescription>Update the destination and metadata</CardDescription>
-              </CardHeader>
+        }
+      }}
+    >
+      <div class="grid gap-6 md:grid-cols-2">
+        <div class="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>QR Code Details</CardTitle>
+              <CardDescription>Update the destination and metadata</CardDescription>
+            </CardHeader>
 
-              <CardContent class="space-y-4">
-                <input type="hidden" name="id" value={qrData.id} />
+            <CardContent class="space-y-4">
+              <input type="hidden" name="id" value={data.qrCode.id} />
+
+              <div class="space-y-2">
+                <Label for="destination-url">Destination URL</Label>
+                <Input
+                  id="destination-url"
+                  name="destinationUrl"
+                  type="url"
+                  bind:value={destinationUrl}
+                  placeholder="https://example.com"
+                  oninput={handleFieldChange}
+                  disabled={data.qrCode.type === "static"}
+                />
+                {#if data.qrCode.type === "static"}
+                  <p class="text-sm text-muted-foreground">
+                    Static QR codes cannot have their URL changed
+                  </p>
+                {/if}
+              </div>
+
+              <div class="space-y-2">
+                <Label for="description">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  bind:value={description}
+                  placeholder="Brief description"
+                  maxlength={500}
+                />
+              </div>
+
+              <div class="space-y-4 rounded-lg border p-4">
+                <div class="space-y-2">
+                  <Label for="foreground-color">Foreground Color</Label>
+                  <div class="flex gap-2">
+                    <Input
+                      id="foreground-color"
+                      name="foregroundColor"
+                      type="color"
+                      bind:value={foregroundColor}
+                      oninput={handleFieldChange}
+                      class="h-10 w-20"
+                    />
+                    <Input
+                      type="text"
+                      bind:value={foregroundColor}
+                      oninput={handleFieldChange}
+                      placeholder="#000000"
+                      class="flex-1 font-mono text-sm"
+                    />
+                  </div>
+                </div>
 
                 <div class="space-y-2">
-                  <Label for="destination-url">Destination URL</Label>
-                  <Input
-                    {...updateQrCode.fields.destinationUrl.as("url")}
-                    id="destination-url"
-                    placeholder="https://example.com"
-                    oninput={handleFieldChange}
-                  />
-                  {#each updateQrCode.fields.destinationUrl.issues() as issue (issue.message)}
-                    <p class="text-sm text-destructive">{issue.message}</p>
-                  {/each}
-                </div>
-
-                <div class="space-y-2">
-                  <Label for="description">Description (Optional)</Label>
-                  <Textarea
-                    {...updateQrCode.fields.description.as("text")}
-                    id="description"
-                    placeholder="Brief description"
-                    maxlength={500}
-                  />
-                  {#each updateQrCode.fields.description.issues() as issue (issue.message)}
-                    <p class="text-sm text-destructive">{issue.message}</p>
-                  {/each}
-                </div>
-
-                <Button type="submit" disabled={!!updateQrCode.pending || loading} class="w-full">
-                  {#if updateQrCode.pending || loading}
-                    Saving...
-                  {:else}
-                    <Save class="mr-2 h-4 w-4" />
-                    Save Changes
-                  {/if}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <QrCustomizer form={updateQrCode} />
-          </div>
-
-          <div class="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Preview</CardTitle>
-                <CardDescription>Live preview of your QR code</CardDescription>
-              </CardHeader>
-
-              <CardContent class="space-y-4">
-                <div class="flex justify-center">
-                  {#if previewSvg}
-                    <div class="rounded-lg border bg-white p-8">
-                      <div
-                        class="h-[200px] w-[200px] overflow-hidden [&_svg]:h-full [&_svg]:w-full"
-                      >
-                        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-                        {@html previewSvg}
-                      </div>
-                    </div>
-                  {:else}
-                    <div class="h-64 w-64 animate-pulse rounded-lg bg-muted"></div>
-                  {/if}
-                </div>
-
-                {#if previewSvg}
-                  <div class="flex justify-center">
-                    <Button type="button" variant="outline" onclick={handleDownload}>
-                      <Download class="mr-2 h-4 w-4" />
-                      Download QR Code
-                    </Button>
+                  <Label for="background-color">Background Color</Label>
+                  <div class="flex gap-2">
+                    <Input
+                      id="background-color"
+                      name="backgroundColor"
+                      type="color"
+                      bind:value={backgroundColor}
+                      oninput={handleFieldChange}
+                      class="h-10 w-20"
+                    />
+                    <Input
+                      type="text"
+                      bind:value={backgroundColor}
+                      oninput={handleFieldChange}
+                      placeholder="#FFFFFF"
+                      class="flex-1 font-mono text-sm"
+                    />
                   </div>
-                {/if}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Statistics</CardTitle>
-                <CardDescription>QR code analytics</CardDescription>
-              </CardHeader>
-
-              <CardContent class="space-y-2">
-                <div class="flex items-center justify-between text-sm">
-                  <span class="text-muted-foreground">Total Scans:</span>
-                  <span class="text-2xl font-bold">{qrData.scanCount}</span>
                 </div>
-                {#if qrData.lastScannedAt}
-                  <div class="flex items-center justify-between text-sm">
-                    <span class="text-muted-foreground">Last Scanned:</span>
-                    <span>{new Date(qrData.lastScannedAt).toLocaleDateString()}</span>
-                  </div>
+              </div>
+
+              <Button type="submit" disabled={loading} class="w-full">
+                {#if loading}
+                  Saving...
+                {:else}
+                  <Save class="mr-2 h-4 w-4" />
+                  Save Changes
                 {/if}
-              </CardContent>
-            </Card>
-          </div>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
-      </form>
-    {/if}
+
+        <div class="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Preview</CardTitle>
+              <CardDescription>Live preview of your QR code</CardDescription>
+            </CardHeader>
+
+            <CardContent class="space-y-4">
+              <div class="flex justify-center">
+                {#if previewSvg}
+                  <div class="rounded-lg border bg-white p-8">
+                    <div class="h-[200px] w-[200px] overflow-hidden [&_svg]:h-full [&_svg]:w-full">
+                      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+                      {@html previewSvg}
+                    </div>
+                  </div>
+                {:else}
+                  <div class="h-64 w-64 animate-pulse rounded-lg bg-muted"></div>
+                {/if}
+              </div>
+
+              {#if previewSvg}
+                <div class="flex justify-center">
+                  <Button type="button" variant="outline" onclick={handleDownload}>
+                    <Download class="mr-2 h-4 w-4" />
+                    Download QR Code
+                  </Button>
+                </div>
+              {/if}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Statistics</CardTitle>
+              <CardDescription>QR code analytics</CardDescription>
+            </CardHeader>
+
+            <CardContent class="space-y-2">
+              <div class="flex items-center justify-between text-sm">
+                <span class="text-muted-foreground">Total Scans:</span>
+                <span class="text-2xl font-bold">{data.qrCode.scanCount}</span>
+              </div>
+              {#if data.qrCode.lastScannedAt}
+                <div class="flex items-center justify-between text-sm">
+                  <span class="text-muted-foreground">Last Scanned:</span>
+                  <span>{new Date(data.qrCode.lastScannedAt).toLocaleDateString()}</span>
+                </div>
+              {/if}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </form>
   </div>
 </div>

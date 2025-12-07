@@ -11,9 +11,6 @@ const config = {
     csrf: {
       trustedOrigins: ["https://qr.yopem.com"],
     },
-    experimental: {
-      remoteFunctions: true,
-    },
   },
   compilerOptions: {
     experimental: {
