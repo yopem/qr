@@ -41,16 +41,66 @@ export async function generateQrCodeSvg(options: GenerateQrOptions): Promise<str
   }
 }
 
+/**
+ * Validates QR code options and normalizes URLs
+ *
+ * Supports multiple URL formats:
+ * - Standard URLs: http://, https://
+ * - Email: mailto:user@example.com
+ * - Phone: tel:+1234567890
+ * - SMS: sms:+1234567890?body=message
+ * - WiFi: WIFI:S:<SSID>;T:<WPA|WEP|>;P:<password>;;
+ * - Other: geo:, whatsapp:, skype:, ftp://, ftps://
+ *
+ * @param options - QR generation options including URL and styles
+ * @returns Validation result with normalized URL if valid
+ */
 export function validateQrOptions(options: GenerateQrOptions): {
   valid: boolean
   error?: string
+  normalizedUrl?: string
 } {
   const { url, styles } = options
 
-  try {
-    new URL(url)
-  } catch {
-    return { valid: false, error: "Invalid URL format" }
+  let normalizedUrl = url.trim()
+
+  const supportedSchemes = [
+    "http://",
+    "https://",
+    "mailto:",
+    "tel:",
+    "sms:",
+    "geo:",
+    "wifi:",
+    "WIFI:",
+    "whatsapp:",
+    "skype:",
+    "ftp://",
+    "ftps://",
+  ]
+
+  const hasScheme = supportedSchemes.some((scheme) =>
+    normalizedUrl.toLowerCase().startsWith(scheme.toLowerCase()),
+  )
+
+  if (!hasScheme && normalizedUrl.length > 0) {
+    normalizedUrl = `https://${normalizedUrl}`
+  }
+
+  if (!normalizedUrl.toUpperCase().startsWith("WIFI:")) {
+    try {
+      new URL(normalizedUrl)
+    } catch {
+      return { valid: false, error: "Invalid URL format" }
+    }
+  } else {
+    const wifiPattern = /^WIFI:[ST]:[^;]*;.*;;$/i
+    if (!wifiPattern.test(normalizedUrl)) {
+      return {
+        valid: false,
+        error: "Invalid WiFi format. Use: WIFI:S:<SSID>;T:<WPA|WEP|>;P:<password>;;",
+      }
+    }
   }
 
   if (styles?.foregroundColor && styles?.backgroundColor) {
@@ -64,7 +114,7 @@ export function validateQrOptions(options: GenerateQrOptions): {
     }
   }
 
-  return { valid: true }
+  return { valid: true, normalizedUrl }
 }
 
 function calculateColorContrast(color1: string, color2: string): number {

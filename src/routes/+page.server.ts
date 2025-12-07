@@ -55,8 +55,11 @@ export const actions: Actions = {
         error(500, `Failed to validate QR code options ${err}`)
       }
 
+      // Use normalized URL for QR generation and storage
+      const normalizedUrl = validation.normalizedUrl || data.destinationUrl
+
       const shortCode = data.type === "dynamic" ? nanoid(8) : null
-      const urlToEncode = shortCode ? `${url.origin}/${shortCode}` : data.destinationUrl
+      const urlToEncode = shortCode ? `${url.origin}/${shortCode}` : normalizedUrl
 
       let svg: string
       try {
@@ -77,7 +80,7 @@ export const actions: Actions = {
           .values({
             userId: session?.id || null,
             shortCode,
-            destinationUrl: data.destinationUrl,
+            destinationUrl: normalizedUrl,
             description: data.description,
             type: data.type,
           })

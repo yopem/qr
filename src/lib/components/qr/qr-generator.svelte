@@ -44,17 +44,6 @@
   let isSubmitting = $state(false)
   let error = $state<string | null>(null)
 
-  // Auto-add https:// to URLs that don't have a protocol
-  $effect(() => {
-    if (
-      destinationUrl &&
-      !destinationUrl.startsWith("http://") &&
-      !destinationUrl.startsWith("https://")
-    ) {
-      destinationUrl = `https://${destinationUrl}`
-    }
-  })
-
   // Update URL when initialUrl changes
   $effect(() => {
     if (initialUrl && !destinationUrl) {

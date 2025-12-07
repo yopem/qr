@@ -1,10 +1,10 @@
 <script lang="ts">
   import BarChartIcon from "@lucide/svelte/icons/bar-chart"
   import DownloadIcon from "@lucide/svelte/icons/download"
+  import LinkIcon from "@lucide/svelte/icons/link"
   import PaletteIcon from "@lucide/svelte/icons/palette"
   import RefreshCwIcon from "@lucide/svelte/icons/refresh-cw"
   import ShieldCheckIcon from "@lucide/svelte/icons/shield-check"
-  import ZapIcon from "@lucide/svelte/icons/zap"
   import { Card, CardDescription, CardHeader, CardTitle } from "$lib/components/ui/card"
 
   const features = [
@@ -26,9 +26,10 @@
         "Match your brand colors and style. Stand out with professional-looking QR codes.",
     },
     {
-      icon: ZapIcon,
-      title: "Instant Generation",
-      description: "Create QR codes in seconds. No signup required for basic features.",
+      icon: LinkIcon,
+      title: "Multiple URL Formats",
+      description:
+        "Support for URLs, emails (mailto:), phone calls (tel:), SMS, WiFi networks, and more. Create QR codes for any purpose.",
     },
     {
       icon: DownloadIcon,
