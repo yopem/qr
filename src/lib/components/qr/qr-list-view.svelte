@@ -123,7 +123,14 @@
                   <span class="sr-only">Edit</span>
                 </Button>
               {/if}
-              <Dialog open={deleteDialogOpen === qrCode.id}>
+              <Dialog
+                open={deleteDialogOpen === qrCode.id}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    deleteDialogOpen = null
+                  }
+                }}
+              >
                 <DialogTrigger>
                   <Button
                     variant="ghost"
