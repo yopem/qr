@@ -18,14 +18,6 @@ export async function generateQrCodeSvg(options: GenerateQrOptions): Promise<str
   const { foregroundColor = "#000000", backgroundColor = "#FFFFFF" } = styles
 
   try {
-    console.log("[QR Generator] Generating QR code:", {
-      urlLength: url.length,
-      size,
-      errorCorrectionLevel,
-      foregroundColor,
-      backgroundColor,
-    })
-
     const svgString = await QRCode.toString(url, {
       type: "svg",
       width: size,
@@ -38,25 +30,11 @@ export async function generateQrCodeSvg(options: GenerateQrOptions): Promise<str
     })
 
     if (!svgString || svgString.length === 0) {
-      console.error("[QR Generator] Generated SVG is empty")
       throw new Error("QR code generation produced empty result")
     }
 
-    console.log("[QR Generator] QR code generated successfully:", {
-      svgLength: svgString.length,
-    })
-
     return svgString
   } catch (error) {
-    console.error("[QR Generator] QR code generation failed:", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-      url: url.substring(0, 100), // Log first 100 chars only
-      size,
-      errorCorrectionLevel,
-      colors: { foregroundColor, backgroundColor },
-    })
-
     throw new Error(
       `Failed to generate QR code: ${error instanceof Error ? error.message : "Unknown error"}`,
     )
