@@ -33,7 +33,7 @@
       </TabsList>
 
       <TabsContent value="generate" class="space-y-6">
-        <QrGenerator showModeTabs={!data.user} initialUrl={scannedUrl} />
+        <QrGenerator showModeTabs={!!data.user} initialUrl={scannedUrl} />
 
         {#if !data.user}
           <div class="rounded-lg border bg-muted p-4 text-center">

@@ -17,8 +17,8 @@
 
   interface Props {
     /**
-     * Whether to show the guest/user mode tabs
-     * Set to false on dashboard where user is always authenticated
+     * Whether to show the Dynamic QR checkbox
+     * Set to true for authenticated users, false for guests
      */
     showModeTabs?: boolean
     /**

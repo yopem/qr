@@ -90,55 +90,48 @@ export const generateQrCode = form(qrGenerateSchema, async (data) => {
       error(500, "Failed to generate QR code. Please try again.")
     }
 
-    if (session) {
-      try {
-        console.log("[QR Generation] Saving to database:", {
-          userId: session.id,
+    try {
+      console.log("[QR Generation] Saving to database:", {
+        userId: session?.id || "guest",
+        type: data.type,
+        hasShortCode: !!shortCode,
+      })
+
+      const [qrCode] = await db
+        .insert(qrCodesTable)
+        .values({
+          userId: session?.id || null,
+          shortCode,
+          destinationUrl: data.destinationUrl,
+          description: data.description,
           type: data.type,
-          hasShortCode: !!shortCode,
         })
+        .returning()
 
-        const [qrCode] = await db
-          .insert(qrCodesTable)
-          .values({
-            userId: session.id,
-            shortCode,
-            destinationUrl: data.destinationUrl,
-            description: data.description,
-            type: data.type,
-          })
-          .returning()
+      await db.insert(qrStylesTable).values({
+        qrCodeId: qrCode.id,
+        foregroundColor: data.foregroundColor || "#000000",
+        backgroundColor: data.backgroundColor || "#FFFFFF",
+        pattern: "square",
+        cornerStyle: "square",
+        logoDataUrl: null,
+      })
 
-        await db.insert(qrStylesTable).values({
-          qrCodeId: qrCode.id,
-          foregroundColor: data.foregroundColor || "#000000",
-          backgroundColor: data.backgroundColor || "#FFFFFF",
-          pattern: "square",
-          cornerStyle: "square",
-          logoDataUrl: null,
-        })
+      console.log("[QR Generation] Database save completed:", {
+        qrCodeId: qrCode.id,
+        isGuest: !session,
+        duration: Date.now() - startTime,
+      })
 
-        console.log("[QR Generation] Database save completed:", {
-          qrCodeId: qrCode.id,
-          duration: Date.now() - startTime,
-        })
-
-        return { success: true, id: qrCode.id, svg, shortCode }
-      } catch (err) {
-        console.error("[QR Generation] Database error:", {
-          error: err instanceof Error ? err.message : String(err),
-          stack: err instanceof Error ? err.stack : undefined,
-          userId: session.id,
-        })
-        error(500, "Failed to save QR code. Please try again.")
-      }
+      return { success: true, id: qrCode.id, svg, shortCode }
+    } catch (err) {
+      console.error("[QR Generation] Database error:", {
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+        userId: session?.id || "guest",
+      })
+      error(500, "Failed to save QR code. Please try again.")
     }
-
-    console.log("[QR Generation] Success (no save):", {
-      duration: Date.now() - startTime,
-    })
-
-    return { success: true, svg }
   } catch (err) {
     const duration = Date.now() - startTime
     console.error("[QR Generation] Unexpected error:", {

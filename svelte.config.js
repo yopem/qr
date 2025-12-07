@@ -8,6 +8,9 @@ const config = {
   preprocess: vitePreprocess(),
   kit: {
     adapter: adapter(),
+    csrf: {
+      trustedOrigins: ["https://qr.yopem.com"],
+    },
     experimental: {
       remoteFunctions: true,
     },
