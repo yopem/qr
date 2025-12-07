@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Moon, Sun } from "@lucide/svelte"
-  import LoginButton from "$lib/components/auth/login-button.svelte"
   import LogoutButton from "$lib/components/auth/logout-button.svelte"
   import Logo from "$lib/components/logo.svelte"
   import { Button } from "$lib/components/ui/button"
@@ -90,7 +89,9 @@
       {#if user}
         <LogoutButton />
       {:else}
-        <LoginButton />
+        <Button>
+          <a href="/auth/login">Login</a>
+        </Button>
       {/if}
     </div>
   </div>
