@@ -223,7 +223,27 @@
         </Button>
 
         {#each generateQrCode.fields.allIssues() as issue (issue.message)}
-          <p class="text-sm text-destructive">{issue.message}</p>
+          <div class="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+            <p class="text-sm font-medium text-destructive">Failed to generate QR code</p>
+            <p class="mt-1 text-sm text-destructive/90">{issue.message}</p>
+            {#if issue.message.includes("save") || issue.message.includes("database")}
+              <p class="mt-2 text-xs text-muted-foreground">
+                There was a problem saving your QR code. Please try again.
+              </p>
+            {:else if issue.message.includes("Authentication required")}
+              <p class="mt-2 text-xs text-muted-foreground">
+                Please <a href="/auth/login" class="underline">sign in</a> to create dynamic QR codes.
+              </p>
+            {:else if issue.message.includes("Invalid")}
+              <p class="mt-2 text-xs text-muted-foreground">
+                Please check that your URL is valid and try again.
+              </p>
+            {:else}
+              <p class="mt-2 text-xs text-muted-foreground">
+                An unexpected error occurred. Please try again.
+              </p>
+            {/if}
+          </div>
         {/each}
       </form>
 

@@ -1,8 +1,22 @@
 import { type Handle } from "@sveltejs/kit"
 import { createAuthClient, setTokens } from "$lib/auth/auth.server"
 import { subjects } from "$lib/auth/subjects"
+import { checkDatabaseConnection } from "$lib/server/db/health"
+
+let dbHealthChecked = false
 
 export const handle: Handle = async ({ event, resolve }) => {
+  if (!dbHealthChecked) {
+    console.log("[Server Startup] Checking database connection...")
+    const health = await checkDatabaseConnection()
+    if (health.connected) {
+      console.log("[Server Startup] ✓ Database connected successfully")
+    } else {
+      console.error("[Server Startup] ✗ Database connection failed:", health.error)
+    }
+    dbHealthChecked = true
+  }
+
   if (event.url.pathname === "/auth/callback") {
     return resolve(event)
   }

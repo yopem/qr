@@ -1,8 +1,9 @@
 # Yopem QR
 
-An open-source, modern, full-featured QR code management platform built with SvelteKit. Create, customize, scan,
-and manage QR codes with an intuitive interface and powerful features. Perfect for developers,
-marketers, and anyone needing dynamic QR code solutions with analytics and customization.
+An open-source, modern, full-featured QR code management platform built with SvelteKit. Create,
+customize, scan, and manage QR codes with an intuitive interface and powerful features. Perfect for
+developers, marketers, and anyone needing dynamic QR code solutions with analytics and
+customization.
 
 ![preview](https://raw.githubusercontent.com/yopem/qr/main/preview.png) <br />
 

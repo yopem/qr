@@ -24,52 +24,132 @@ const qrGenerateSchema = z.object({
 export const generateQrCode = form(qrGenerateSchema, async (data) => {
   const event = getRequestEvent()
   const session = event.locals.session
+  const startTime = Date.now()
 
-  if (data.type === "dynamic" && !session) {
-    error(401, "Authentication required for dynamic QR codes")
-  }
-
-  const validation = validateQrOptions({ url: data.destinationUrl })
-  if (!validation.valid) {
-    error(400, validation.error || "Invalid QR code options")
-  }
-
-  const shortCode = data.type === "dynamic" ? nanoid(8) : null
-  const urlToEncode = shortCode ? `${event.url.origin}/${shortCode}` : data.destinationUrl
-
-  const svg = await generateQrCodeSvg({
-    url: urlToEncode,
-    styles: {
-      foregroundColor: data.foregroundColor,
-      backgroundColor: data.backgroundColor,
-    },
-  })
-
-  if (session) {
-    const [qrCode] = await db
-      .insert(qrCodesTable)
-      .values({
-        userId: session.id,
-        shortCode,
-        destinationUrl: data.destinationUrl,
-        description: data.description,
-        type: data.type,
-      })
-      .returning()
-
-    await db.insert(qrStylesTable).values({
-      qrCodeId: qrCode.id,
-      foregroundColor: data.foregroundColor || "#000000",
-      backgroundColor: data.backgroundColor || "#FFFFFF",
-      pattern: "square",
-      cornerStyle: "square",
-      logoDataUrl: null,
+  try {
+    console.log("[QR Generation] Request received:", {
+      type: data.type,
+      userId: session?.id,
+      hasUrl: !!data.destinationUrl,
+      timestamp: new Date().toISOString(),
     })
 
-    return { success: true, id: qrCode.id, svg, shortCode }
-  }
+    if (data.type === "dynamic" && !session) {
+      console.log("[QR Generation] Auth required for dynamic QR")
+      error(401, "Authentication required for dynamic QR codes")
+    }
 
-  return { success: true, svg }
+    let validation
+    try {
+      validation = validateQrOptions({ url: data.destinationUrl })
+      if (!validation.valid) {
+        console.log("[QR Generation] Validation failed:", {
+          url: data.destinationUrl,
+          error: validation.error,
+        })
+        error(400, validation.error || "Invalid QR code options")
+      }
+      console.log("[QR Generation] Validation completed")
+    } catch (err) {
+      console.error("[QR Generation] Validation error:", {
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+      })
+      error(500, "Failed to validate QR code options")
+    }
+
+    const shortCode = data.type === "dynamic" ? nanoid(8) : null
+    const urlToEncode = shortCode ? `${event.url.origin}/${shortCode}` : data.destinationUrl
+
+    let svg: string
+    try {
+      console.log("[QR Generation] Starting QR generation:", {
+        urlLength: urlToEncode.length,
+        hasColors: !!(data.foregroundColor || data.backgroundColor),
+      })
+
+      svg = await generateQrCodeSvg({
+        url: urlToEncode,
+        styles: {
+          foregroundColor: data.foregroundColor,
+          backgroundColor: data.backgroundColor,
+        },
+      })
+
+      console.log("[QR Generation] QR generation completed:", {
+        svgLength: svg.length,
+        duration: Date.now() - startTime,
+      })
+    } catch (err) {
+      console.error("[QR Generation] QR generation failed:", {
+        error: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : undefined,
+        url: urlToEncode,
+        colors: { fg: data.foregroundColor, bg: data.backgroundColor },
+      })
+      error(500, "Failed to generate QR code. Please try again.")
+    }
+
+    if (session) {
+      try {
+        console.log("[QR Generation] Saving to database:", {
+          userId: session.id,
+          type: data.type,
+          hasShortCode: !!shortCode,
+        })
+
+        const [qrCode] = await db
+          .insert(qrCodesTable)
+          .values({
+            userId: session.id,
+            shortCode,
+            destinationUrl: data.destinationUrl,
+            description: data.description,
+            type: data.type,
+          })
+          .returning()
+
+        await db.insert(qrStylesTable).values({
+          qrCodeId: qrCode.id,
+          foregroundColor: data.foregroundColor || "#000000",
+          backgroundColor: data.backgroundColor || "#FFFFFF",
+          pattern: "square",
+          cornerStyle: "square",
+          logoDataUrl: null,
+        })
+
+        console.log("[QR Generation] Database save completed:", {
+          qrCodeId: qrCode.id,
+          duration: Date.now() - startTime,
+        })
+
+        return { success: true, id: qrCode.id, svg, shortCode }
+      } catch (err) {
+        console.error("[QR Generation] Database error:", {
+          error: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack : undefined,
+          userId: session.id,
+        })
+        error(500, "Failed to save QR code. Please try again.")
+      }
+    }
+
+    console.log("[QR Generation] Success (no save):", {
+      duration: Date.now() - startTime,
+    })
+
+    return { success: true, svg }
+  } catch (err) {
+    const duration = Date.now() - startTime
+    console.error("[QR Generation] Unexpected error:", {
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+      type: data.type,
+      userId: session?.id,
+      duration,
+    })
+    throw err
+  }
 })
 
 export const getUserQrCodes = query(async () => {
