@@ -30,7 +30,6 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
   generateQrCode: async ({ request, locals, url }) => {
     const session = locals.session
-    const startTime = Date.now()
 
     try {
       const formData = await request.formData()
@@ -42,15 +41,7 @@ export const actions: Actions = {
         backgroundColor: formData.get("backgroundColor") || undefined,
       })
 
-      console.log("[QR Generation] Request received:", {
-        type: data.type,
-        userId: session?.id,
-        hasUrl: !!data.destinationUrl,
-        timestamp: new Date().toISOString(),
-      })
-
       if (data.type === "dynamic" && !session) {
-        console.log("[QR Generation] Auth required for dynamic QR")
         error(401, "Authentication required for dynamic QR codes")
       }
 
@@ -58,19 +49,10 @@ export const actions: Actions = {
       try {
         validation = validateQrOptions({ url: data.destinationUrl })
         if (!validation.valid) {
-          console.log("[QR Generation] Validation failed:", {
-            url: data.destinationUrl,
-            error: validation.error,
-          })
           error(400, validation.error || "Invalid QR code options")
         }
-        console.log("[QR Generation] Validation completed")
       } catch (err) {
-        console.error("[QR Generation] Validation error:", {
-          error: err instanceof Error ? err.message : String(err),
-          stack: err instanceof Error ? err.stack : undefined,
-        })
-        error(500, "Failed to validate QR code options")
+        error(500, `Failed to validate QR code options ${err}`)
       }
 
       const shortCode = data.type === "dynamic" ? nanoid(8) : null
@@ -78,11 +60,6 @@ export const actions: Actions = {
 
       let svg: string
       try {
-        console.log("[QR Generation] Starting QR generation:", {
-          urlLength: urlToEncode.length,
-          hasColors: !!(data.foregroundColor || data.backgroundColor),
-        })
-
         svg = await generateQrCodeSvg({
           url: urlToEncode,
           styles: {
@@ -90,28 +67,11 @@ export const actions: Actions = {
             backgroundColor: data.backgroundColor,
           },
         })
-
-        console.log("[QR Generation] QR generation completed:", {
-          svgLength: svg.length,
-          duration: Date.now() - startTime,
-        })
       } catch (err) {
-        console.error("[QR Generation] QR generation failed:", {
-          error: err instanceof Error ? err.message : String(err),
-          stack: err instanceof Error ? err.stack : undefined,
-          url: urlToEncode,
-          colors: { fg: data.foregroundColor, bg: data.backgroundColor },
-        })
-        error(500, "Failed to generate QR code. Please try again.")
+        error(500, `Failed to generate QR code. Please try again. ${err}`)
       }
 
       try {
-        console.log("[QR Generation] Saving to database:", {
-          userId: session?.id || "guest",
-          type: data.type,
-          hasShortCode: !!shortCode,
-        })
-
         const [qrCode] = await db
           .insert(qrCodesTable)
           .values({
@@ -132,29 +92,12 @@ export const actions: Actions = {
           logoDataUrl: null,
         })
 
-        console.log("[QR Generation] Database save completed:", {
-          qrCodeId: qrCode.id,
-          isGuest: !session,
-          duration: Date.now() - startTime,
-        })
-
         return { success: true, id: qrCode.id, svg, shortCode }
       } catch (err) {
-        console.error("[QR Generation] Database error:", {
-          error: err instanceof Error ? err.message : String(err),
-          stack: err instanceof Error ? err.stack : undefined,
-          userId: session?.id || "guest",
-        })
-        error(500, "Failed to save QR code. Please try again.")
+        error(500, `Failed to save QR code. Please try again. ${err}`)
       }
     } catch (err) {
-      const duration = Date.now() - startTime
-      console.error("[QR Generation] Unexpected error:", {
-        error: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : undefined,
-        duration,
-      })
-      throw err
+      error(500, `Failed to generate QR code. Please try again. ${err}`)
     }
   },
 }
