@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Copy, Download, Edit, ExternalLink, Trash2 } from "@lucide/svelte"
   import { Badge } from "$lib/components/ui/badge"
-  import { Button } from "$lib/components/ui/button"
+  import { Button, buttonVariants } from "$lib/components/ui/button"
   import {
     Card,
     CardContent,
@@ -12,6 +12,7 @@
   } from "$lib/components/ui/card"
   import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -21,6 +22,7 @@
   } from "$lib/components/ui/dialog"
   import type { QrCode } from "$lib/server/db/schema/qr-codes"
   import { generateQrCodeSvg, generateQrFilename } from "$lib/utils/qr-generator"
+  import { onMount } from "svelte"
   import { toast } from "svelte-sonner"
 
   interface Props {
@@ -31,8 +33,11 @@
 
   let { qrCode, onEdit, onDelete }: Props = $props()
 
-  let dialogOpen = $state(false)
   let qrSvg = $state<string | null>(null)
+
+  onMount(() => {
+    return
+  })
 
   $effect(() => {
     generateQrCodeSvg({
@@ -85,7 +90,6 @@
 
   function handleConfirmDelete() {
     onDelete?.(qrCode.id)
-    dialogOpen = false
   }
 </script>
 
@@ -170,7 +174,7 @@
         Edit
       </Button>
     {/if}
-    <Dialog bind:open={dialogOpen}>
+    <Dialog>
       <DialogTrigger>
         <Button variant="destructive" size="sm" class="flex-1">
           <Trash2 class="mr-2 h-4 w-4" />
@@ -188,7 +192,7 @@
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onclick={() => (dialogOpen = false)}>Cancel</Button>
+          <DialogClose class={buttonVariants({ variant: "outline" })}>Cancel</DialogClose>
           <Button variant="destructive" onclick={handleConfirmDelete}>Delete</Button>
         </DialogFooter>
       </DialogContent>

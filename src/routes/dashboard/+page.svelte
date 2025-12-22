@@ -21,15 +21,14 @@
     end: "",
   })
   let isDeleting = $state(false)
-  let datePickerOpen = $state(false)
-  let filterSelectOpen = $state(false)
-  let sortSelectOpen = $state(false)
+  let mountKey = $state(0)
 
   onMount(() => {
     const saved = localStorage.getItem("dashboard-view-mode")
     if (saved === "list" || saved === "grid") {
       viewMode = saved
     }
+    mountKey++
   })
 
   $effect(() => {
@@ -186,130 +185,128 @@
         </div>
       </div>
     {:else}
-      <div class="space-y-4">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="relative max-w-sm flex-1">
-            <Search
-              class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              type="text"
-              placeholder="Search by URL, description, or short code..."
-              bind:value={searchQuery}
-              class="pl-9"
-            />
+      {#key mountKey}
+        <div class="space-y-4">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="relative max-w-sm flex-1">
+              <Search
+                class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                type="text"
+                placeholder="Search by URL, description, or short code..."
+                bind:value={searchQuery}
+                class="pl-9"
+              />
+            </div>
+            <div class="flex gap-2">
+              <Select
+                type="single"
+                value={filterType}
+                onValueChange={(v) => {
+                  if (v) filterType = v as typeof filterType
+                }}
+              >
+                <SelectTrigger class="w-full sm:w-[140px]">
+                  <span
+                    >Type: {filterType === "all"
+                      ? "All"
+                      : filterType === "static"
+                        ? "Static"
+                        : "Dynamic"}</span
+                  >
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="static">Static</SelectItem>
+                  <SelectItem value="dynamic">Dynamic</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                type="single"
+                value={sortBy}
+                onValueChange={(v) => {
+                  if (v) sortBy = v as typeof sortBy
+                }}
+              >
+                <SelectTrigger class="w-full sm:w-[180px]">
+                  <span
+                    >Sort: {sortBy === "newest"
+                      ? "Newest"
+                      : sortBy === "oldest"
+                        ? "Oldest"
+                        : "Name"}</span
+                  >
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="oldest">Oldest First</SelectItem>
+                  <SelectItem value="name">Name (A-Z)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div class="flex gap-2">
-            <Select
-              type="single"
-              value={filterType}
-              open={filterSelectOpen}
-              onOpenChange={(open) => (filterSelectOpen = open)}
-              onValueChange={(v) => {
-                if (v) filterType = v as typeof filterType
-              }}
-            >
-              <SelectTrigger class="w-full sm:w-[140px]">
-                <span
-                  >Type: {filterType === "all"
-                    ? "All"
-                    : filterType === "static"
-                      ? "Static"
-                      : "Dynamic"}</span
-                >
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="static">Static</SelectItem>
-                <SelectItem value="dynamic">Dynamic</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              type="single"
-              value={sortBy}
-              open={sortSelectOpen}
-              onOpenChange={(open) => (sortSelectOpen = open)}
-              onValueChange={(v) => {
-                if (v) sortBy = v as typeof sortBy
-              }}
-            >
-              <SelectTrigger class="w-full sm:w-[180px]">
-                <span
-                  >Sort: {sortBy === "newest"
-                    ? "Newest"
-                    : sortBy === "oldest"
-                      ? "Oldest"
-                      : "Name"}</span
-                >
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-                <SelectItem value="name">Name (A-Z)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
 
-        <div class="flex flex-wrap items-center gap-4">
-          <Popover open={datePickerOpen} onOpenChange={(open) => (datePickerOpen = open)}>
-            <PopoverTrigger>
-              <Button variant="outline" class="gap-2">
-                <CalendarIcon class="h-4 w-4" />
-                {#if dateRange.start || dateRange.end}
-                  {dateRange.start || "Start"} - {dateRange.end || "End"}
-                {:else}
-                  Date Range
-                {/if}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent class="w-auto p-4">
-              <div class="space-y-4">
-                <div class="space-y-2">
-                  <span class="text-sm font-medium">Start Date</span>
-                  <Input type="date" bind:value={dateRange.start} />
-                </div>
-                <div class="space-y-2">
-                  <span class="text-sm font-medium">End Date</span>
-                  <Input type="date" bind:value={dateRange.end} />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onclick={() => (dateRange = { start: "", end: "" })}
-                  class="w-full"
-                >
-                  Clear Dates
+          <div class="flex flex-wrap items-center gap-4">
+            <Popover>
+              <PopoverTrigger>
+                <Button variant="outline" class="gap-2">
+                  <CalendarIcon class="h-4 w-4" />
+                  {#if dateRange.start || dateRange.end}
+                    {dateRange.start || "Start"} - {dateRange.end || "End"}
+                  {:else}
+                    Date Range
+                  {/if}
                 </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverTrigger>
+              <PopoverContent class="w-auto p-4">
+                <div class="space-y-4">
+                  <div class="space-y-2">
+                    <span class="text-sm font-medium">Start Date</span>
+                    <Input type="date" bind:value={dateRange.start} />
+                  </div>
+                  <div class="space-y-2">
+                    <span class="text-sm font-medium">End Date</span>
+                    <Input type="date" bind:value={dateRange.end} />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onclick={() => (dateRange = { start: "", end: "" })}
+                    class="w-full"
+                  >
+                    Clear Dates
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
 
-          {#if hasActiveFilters}
-            <Button variant="ghost" size="sm" onclick={clearFilters}>
-              <X class="mr-1 h-4 w-4" />
-              Clear Filters
-            </Button>
-          {/if}
+            {#if hasActiveFilters}
+              <Button variant="ghost" size="sm" onclick={clearFilters}>
+                <X class="mr-1 h-4 w-4" />
+                Clear Filters
+              </Button>
+            {/if}
+          </div>
         </div>
-      </div>
 
-      {@const filteredQrCodes = filterAndSortQrCodes(data.qrCodes)}
+        {@const filteredQrCodes = filterAndSortQrCodes(data.qrCodes)}
 
-      {#if filteredQrCodes.length === 0}
-        <div class="rounded-lg border border-dashed p-8 text-center">
-          <p class="text-muted-foreground">No QR codes match your filters.</p>
-          <Button variant="ghost" onclick={clearFilters} class="mt-4">Clear Filters</Button>
-        </div>
-      {:else if viewMode === "list"}
-        <QrListView qrCodes={filteredQrCodes} onEdit={handleEdit} onDelete={handleDelete} />
-      {:else}
-        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {#each filteredQrCodes as qrCode (qrCode.id)}
-            <QrCard {qrCode} onEdit={handleEdit} onDelete={handleDelete} />
-          {/each}
-        </div>
-      {/if}
+        {#if filteredQrCodes.length === 0}
+          <div class="rounded-lg border border-dashed p-8 text-center">
+            <p class="text-muted-foreground">No QR codes match your filters.</p>
+            <Button variant="ghost" onclick={clearFilters} class="mt-4">Clear Filters</Button>
+          </div>
+        {:else if viewMode === "list"}
+          <QrListView qrCodes={filteredQrCodes} onEdit={handleEdit} onDelete={handleDelete} />
+        {:else}
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {#each filteredQrCodes as qrCode (qrCode.id)}
+              <QrCard {qrCode} onEdit={handleEdit} onDelete={handleDelete} />
+            {/each}
+          </div>
+        {/if}
+      {/key}
     {/if}
   </div>
 </div>

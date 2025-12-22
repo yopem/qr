@@ -4,6 +4,7 @@
   import { Button } from "$lib/components/ui/button"
   import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
@@ -21,6 +22,7 @@
   } from "$lib/components/ui/table"
   import type { QrCode } from "$lib/server/db/schema/qr-codes"
   import { generateQrCodeSvg } from "$lib/utils/qr-generator"
+  import { onMount } from "svelte"
 
   import QrActionsPopover from "./qr-actions-popover.svelte"
 
@@ -33,7 +35,10 @@
   let { qrCodes, onEdit, onDelete }: Props = $props()
 
   let qrSvgCache = $state<Record<string, string>>({})
-  let deleteDialogOpen = $state<string | null>(null)
+
+  onMount(() => {
+    return
+  })
 
   $effect(() => {
     qrCodes.forEach((qrCode) => {
@@ -61,7 +66,6 @@
 
   function handleConfirmDelete(qrCode: QrCode) {
     onDelete?.(qrCode.id)
-    deleteDialogOpen = null
   }
 </script>
 
@@ -123,20 +127,12 @@
                   <span class="sr-only">Edit</span>
                 </Button>
               {/if}
-              <Dialog
-                open={deleteDialogOpen === qrCode.id}
-                onOpenChange={(open) => {
-                  if (!open) {
-                    deleteDialogOpen = null
-                  }
-                }}
-              >
+              <Dialog>
                 <DialogTrigger>
                   <Button
                     variant="ghost"
                     size="icon"
                     class="h-8 w-8 text-destructive hover:bg-destructive/10"
-                    onclick={() => (deleteDialogOpen = qrCode.id)}
                   >
                     <Trash2 class="h-4 w-4" />
                     <span class="sr-only">Delete</span>
@@ -153,9 +149,9 @@
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter>
-                    <Button variant="outline" onclick={() => (deleteDialogOpen = null)}>
-                      Cancel
-                    </Button>
+                    <DialogClose>
+                      <Button variant="outline">Cancel</Button>
+                    </DialogClose>
                     <Button variant="destructive" onclick={() => handleConfirmDelete(qrCode)}>
                       Delete
                     </Button>
