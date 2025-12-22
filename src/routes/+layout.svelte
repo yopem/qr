@@ -16,6 +16,11 @@
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script
+    defer
+    src="https://analytics.yopem.com/script.js"
+    data-website-id="6ca1bda3-6852-48c5-9df5-0b3bca2ff5ce"
+  ></script>
 </svelte:head>
 
 <div class="flex min-h-screen flex-col">
