@@ -55,7 +55,6 @@ export const actions: Actions = {
         error(500, `Failed to validate QR code options ${err}`)
       }
 
-      // Use normalized URL for QR generation and storage
       const normalizedUrl = validation.normalizedUrl || data.destinationUrl
 
       const shortCode = data.type === "dynamic" ? nanoid(8) : null

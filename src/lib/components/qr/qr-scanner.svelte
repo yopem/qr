@@ -12,13 +12,7 @@
   import { scanQrCode } from "$lib/utils/qr-scanner"
 
   interface Props {
-    /**
-     * Callback when QR code is successfully scanned
-     */
     onScan?: (url: string) => void
-    /**
-     * Callback when user wants to generate QR from scanned URL
-     */
     onGenerateQr?: (url: string) => void
   }
 

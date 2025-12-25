@@ -16,19 +16,8 @@
   import { generateQrFilename } from "$lib/utils/qr-generator"
 
   interface Props {
-    /**
-     * Whether to show the Dynamic QR checkbox
-     * Set to true for authenticated users, false for guests
-     */
     showModeTabs?: boolean
-    /**
-     * Initial QR type (static or dynamic)
-     */
     initialType?: "static" | "dynamic"
-    /**
-     * Initial URL to populate the form
-     * Used when scanning a QR code and switching to generate tab
-     */
     initialUrl?: string
   }
 
@@ -44,14 +33,12 @@
   let isSubmitting = $state(false)
   let error = $state<string | null>(null)
 
-  // Update URL when initialUrl changes
   $effect(() => {
     if (initialUrl && !destinationUrl) {
       destinationUrl = initialUrl
     }
   })
 
-  // Handle form result from page store
   $effect(() => {
     const form = $page.form
     if (form && typeof form === "object" && "success" in form && form.success && "svg" in form) {
@@ -111,7 +98,6 @@
 
   <CardContent>
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <!-- Left side: Form -->
       <form
         method="POST"
         action="?/generateQrCode"
@@ -249,7 +235,6 @@
         {/if}
       </form>
 
-      <!-- Right side: QR Code Preview -->
       <div class="flex flex-col items-center justify-center gap-4">
         {#if generatedSvg}
           <div class="rounded-lg border bg-white p-8">

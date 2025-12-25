@@ -8,10 +8,6 @@ export interface DatabaseHealthCheck {
   timestamp: string
 }
 
-/**
- * Checks if the database connection is active
- * @returns Database health status
- */
 export async function checkDatabaseConnection(): Promise<DatabaseHealthCheck> {
   const timestamp = new Date().toISOString()
 

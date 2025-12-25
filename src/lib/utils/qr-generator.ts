@@ -41,20 +41,6 @@ export async function generateQrCodeSvg(options: GenerateQrOptions): Promise<str
   }
 }
 
-/**
- * Validates QR code options and normalizes URLs
- *
- * Supports multiple URL formats:
- * - Standard URLs: http://, https://
- * - Email: mailto:user@example.com
- * - Phone: tel:+1234567890
- * - SMS: sms:+1234567890?body=message
- * - WiFi: WIFI:S:<SSID>;T:<WPA|WEP|>;P:<password>;;
- * - Other: geo:, whatsapp:, skype:, ftp://, ftps://
- *
- * @param options - QR generation options including URL and styles
- * @returns Validation result with normalized URL if valid
- */
 export function validateQrOptions(options: GenerateQrOptions): {
   valid: boolean
   error?: string
