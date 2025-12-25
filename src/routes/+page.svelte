@@ -130,7 +130,7 @@
 
     <div class="space-y-6">
       <TabsContent value="generate" class="space-y-6">
-        <QrGenerator showModeTabs={!!data.user} initialUrl={scannedUrl} />
+        <QrGenerator showModeTabs={!!data.user} initialUrl={scannedUrl} user={data.user} />
 
         {#if !data.user}
           <div class="rounded-lg border bg-muted/60 p-4 text-center">
@@ -144,7 +144,7 @@
       </TabsContent>
 
       <TabsContent value="scan" class="space-y-6">
-        <QrScanner onScan={handleScan} onGenerateQr={handleGenerateQr} />
+        <QrScanner onScan={handleScan} onGenerateQr={handleGenerateQr} user={data.user} />
       </TabsContent>
     </div>
   </Tabs>

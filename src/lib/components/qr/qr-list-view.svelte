@@ -78,6 +78,7 @@
         <TableHead class="hidden md:table-cell">Type</TableHead>
         <TableHead class="hidden lg:table-cell">Created</TableHead>
         <TableHead class="text-right">Scans</TableHead>
+        <TableHead class="hidden xl:table-cell">Last Scanned</TableHead>
         <TableHead class="w-24 text-right">Actions</TableHead>
       </TableRow>
     </TableHeader>
@@ -112,6 +113,13 @@
           </TableCell>
           <TableCell class="text-right font-medium">
             {qrCode.scanCount}
+          </TableCell>
+          <TableCell class="hidden text-sm text-muted-foreground xl:table-cell">
+            {#if qrCode.lastScannedAt}
+              {formatDate(qrCode.lastScannedAt)}
+            {:else}
+              <span class="italic">Never</span>
+            {/if}
           </TableCell>
           <TableCell class="text-right">
             <div class="flex items-center justify-end gap-1">
