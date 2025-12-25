@@ -23,7 +23,7 @@
   ></script>
 </svelte:head>
 
-<div class="min-h-screen bg-gradient-to-b from-background via-background to-muted/40">
+<div class="min-h-screen bg-linear-to-b from-background via-background to-muted/40">
   <div class="flex min-h-screen flex-col">
     <Navigation user={data?.user} />
 
