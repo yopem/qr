@@ -19,7 +19,10 @@ export const qrCodesTable = pgTable("qr_codes", {
   scanCount: integer("scan_count").notNull().default(0),
   lastScannedAt: timestamp("last_scanned_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 })
 
 export const insertQrCodeSchema = createInsertSchema(qrCodesTable, {

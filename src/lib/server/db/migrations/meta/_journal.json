@@ -15,6 +15,13 @@
       "when": 1763990539086,
       "tag": "0001_opposite_makkari",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1766684439699,
+      "tag": "0002_awesome_omega_flight",
+      "breakpoints": true
     }
   ]
 }

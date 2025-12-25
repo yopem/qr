@@ -1,0 +1,1 @@
+ALTER TABLE "user_settings" ALTER COLUMN "updated_at" SET NOT NULL;
