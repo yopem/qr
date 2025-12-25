@@ -127,127 +127,123 @@
   )
 </script>
 
-<div class="container mx-auto max-w-7xl px-4 py-8">
-  <div class="space-y-6">
-    <div class="flex items-center justify-between">
-      <div class="space-y-1">
-        <h1 class="text-3xl font-bold tracking-tight">My QR Codes</h1>
-        <p class="text-muted-foreground">View and manage all your QR codes</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="icon"
-          onclick={toggleViewMode}
-          aria-label={`Switch to ${viewMode === "list" ? "grid" : "list"} view`}
+<section class="space-y-8">
+  <header class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div class="space-y-1">
+      <p class="text-sm font-semibold tracking-[0.2em] text-primary uppercase">Dashboard</p>
+      <h1 class="text-3xl font-bold tracking-tight">My QR Codes</h1>
+      <p class="text-muted-foreground">View and manage all your QR codes</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <Button
+        variant="outline"
+        size="icon"
+        onclick={toggleViewMode}
+        aria-label={`Switch to ${viewMode === "list" ? "grid" : "list"} view`}
+      >
+        {#if viewMode === "list"}
+          <LayoutGrid class="h-4 w-4" />
+        {:else}
+          <LayoutList class="h-4 w-4" />
+        {/if}
+      </Button>
+      <Button href="/" class="gap-2">
+        <Plus class="h-4 w-4" />
+        Create New
+      </Button>
+    </div>
+  </header>
+
+  {#if data.qrCodes.length === 0}
+    <div
+      class="flex min-h-[420px] flex-col items-center justify-center rounded-2xl border border-dashed bg-muted/40 p-10 text-center"
+    >
+      <div class="mx-auto flex max-w-[460px] flex-col items-center justify-center text-center">
+        <svg
+          class="h-12 w-12 text-muted-foreground"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
         >
-          {#if viewMode === "list"}
-            <LayoutGrid class="h-4 w-4" />
-          {:else}
-            <LayoutList class="h-4 w-4" />
-          {/if}
-        </Button>
-        <Button href="/" class="gap-2">
-          <Plus class="h-4 w-4" />
-          Create New
-        </Button>
+          <path
+            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+          />
+          <polyline points="3.29 7 12 12 20.71 7" />
+          <line x1="12" x2="12" y1="22" y2="12" />
+        </svg>
+        <h3 class="mt-5 text-xl font-semibold">No QR codes yet</h3>
+        <p class="mt-3 mb-5 text-sm text-muted-foreground">
+          You haven't created any QR codes. Get started by creating your first one!
+        </p>
+        <Button href="/">Create QR Code</Button>
       </div>
     </div>
-
-    {#if data.qrCodes.length === 0}
-      <div
-        class="flex min-h-[400px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center"
-      >
-        <div class="mx-auto flex max-w-[420px] flex-col items-center justify-center text-center">
-          <svg
-            class="h-10 w-10 text-muted-foreground"
-            fill="none"
-            height="24"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            viewBox="0 0 24 24"
-            width="24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+  {:else}
+    {#key mountKey}
+      <div class="space-y-5">
+        <div class="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-center">
+          <div class="relative flex-1">
+            <Search
+              class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
             />
-            <polyline points="3.29 7 12 12 20.71 7" />
-            <line x1="12" x2="12" y1="22" y2="12" />
-          </svg>
-          <h3 class="mt-4 text-lg font-semibold">No QR codes yet</h3>
-          <p class="mt-2 mb-4 text-sm text-muted-foreground">
-            You haven't created any QR codes. Get started by creating your first one!
-          </p>
-          <Button href="/">Create QR Code</Button>
-        </div>
-      </div>
-    {:else}
-      {#key mountKey}
-        <div class="space-y-4">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div class="relative max-w-sm flex-1">
-              <Search
-                class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-              />
-              <Input
-                type="text"
-                placeholder="Search by URL, description, or short code..."
-                bind:value={searchQuery}
-                class="pl-9"
-              />
-            </div>
-            <div class="flex gap-2">
-              <Select
-                type="single"
-                value={filterType}
-                onValueChange={(v) => {
-                  if (v) filterType = v as typeof filterType
-                }}
-              >
-                <SelectTrigger class="w-full sm:w-[140px]">
-                  <span
-                    >Type: {filterType === "all"
-                      ? "All"
-                      : filterType === "static"
-                        ? "Static"
-                        : "Dynamic"}</span
-                  >
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="static">Static</SelectItem>
-                  <SelectItem value="dynamic">Dynamic</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                type="single"
-                value={sortBy}
-                onValueChange={(v) => {
-                  if (v) sortBy = v as typeof sortBy
-                }}
-              >
-                <SelectTrigger class="w-full sm:w-[180px]">
-                  <span
-                    >Sort: {sortBy === "newest"
-                      ? "Newest"
-                      : sortBy === "oldest"
-                        ? "Oldest"
-                        : "Name"}</span
-                  >
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="name">Name (A-Z)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Input
+              type="text"
+              placeholder="Search by URL, description, or short code..."
+              bind:value={searchQuery}
+              class="pl-9"
+            />
           </div>
-
-          <div class="flex flex-wrap items-center gap-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <Select
+              type="single"
+              value={filterType}
+              onValueChange={(v) => {
+                if (v) filterType = v as typeof filterType
+              }}
+            >
+              <SelectTrigger class="w-full sm:w-[140px]">
+                <span
+                  >Type: {filterType === "all"
+                    ? "All"
+                    : filterType === "static"
+                      ? "Static"
+                      : "Dynamic"}</span
+                >
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="static">Static</SelectItem>
+                <SelectItem value="dynamic">Dynamic</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select
+              type="single"
+              value={sortBy}
+              onValueChange={(v) => {
+                if (v) sortBy = v as typeof sortBy
+              }}
+            >
+              <SelectTrigger class="w-full sm:w-[160px]">
+                <span
+                  >Sort: {sortBy === "newest"
+                    ? "Newest"
+                    : sortBy === "oldest"
+                      ? "Oldest"
+                      : "Name"}</span
+                >
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+                <SelectItem value="name">Name (A-Z)</SelectItem>
+              </SelectContent>
+            </Select>
             <Popover>
               <PopoverTrigger>
                 <Button variant="outline" class="gap-2">
@@ -280,7 +276,6 @@
                 </div>
               </PopoverContent>
             </Popover>
-
             {#if hasActiveFilters}
               <Button variant="ghost" size="sm" onclick={clearFilters}>
                 <X class="mr-1 h-4 w-4" />
@@ -290,23 +285,25 @@
           </div>
         </div>
 
-        {@const filteredQrCodes = filterAndSortQrCodes(data.qrCodes)}
-
-        {#if filteredQrCodes.length === 0}
-          <div class="rounded-lg border border-dashed p-8 text-center">
+        {#if filterAndSortQrCodes(data.qrCodes).length === 0}
+          <div class="rounded-2xl border border-dashed bg-muted/40 p-8 text-center">
             <p class="text-muted-foreground">No QR codes match your filters.</p>
             <Button variant="ghost" onclick={clearFilters} class="mt-4">Clear Filters</Button>
           </div>
         {:else if viewMode === "list"}
-          <QrListView qrCodes={filteredQrCodes} onEdit={handleEdit} onDelete={handleDelete} />
+          <QrListView
+            qrCodes={filterAndSortQrCodes(data.qrCodes)}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         {:else}
           <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {#each filteredQrCodes as qrCode (qrCode.id)}
+            {#each filterAndSortQrCodes(data.qrCodes) as qrCode (qrCode.id)}
               <QrCard {qrCode} onEdit={handleEdit} onDelete={handleDelete} />
             {/each}
           </div>
         {/if}
-      {/key}
-    {/if}
-  </div>
-</div>
+      </div>
+    {/key}
+  {/if}
+</section>

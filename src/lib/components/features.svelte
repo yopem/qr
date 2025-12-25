@@ -44,12 +44,14 @@
   ]
 </script>
 
-<section class="w-full bg-linear-to-b from-background to-muted/30 py-16 md:py-24">
+<section class="w-full rounded-2xl bg-linear-to-b from-background to-muted/30 py-16 md:py-24">
   <div class="container mx-auto max-w-7xl px-4">
     <div class="mb-12 text-center">
       <p class="mx-auto max-w-2xl text-xl font-semibold">
-        Create professional QR codes in seconds. Track performance, update destinations, and
-        customize designs—all in one place.
+        Create QR codes or scan any QR to reveal its URL instantly
+      </p>
+      <p class="mx-auto max-w-2xl text-xl font-semibold">
+        Track performance, update destinations, customize designs in one place
       </p>
     </div>
 
@@ -58,7 +60,7 @@
         <Card class="transition-all hover:-translate-y-1 hover:shadow-lg">
           <CardHeader>
             <div
-              class="mb-3 flex h-14 w-14 items-center justify-center rounded-lg bg-primary/10 text-primary"
+              class="flex h-14 w-14 items-center justify-center rounded-lg bg-primary/10 text-primary"
             >
               <svelte:component this={feature.icon} class="h-7 w-7" />
             </div>

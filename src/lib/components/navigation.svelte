@@ -46,30 +46,30 @@
 </script>
 
 <header
-  class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60"
+  class="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur supports-backdrop-filter:bg-background/70"
 >
-  <div class="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+  <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
     <div class="flex items-center gap-6">
       <div class="flex items-center gap-2">
         <a href="https://yopem.com" class="flex items-center">
-          <Logo class="size-8" />
+          <Logo class="size-9" />
         </a>
-        <span class="text-xl">/</span>
+        <span class="text-xl text-muted-foreground">/</span>
         <a href="/" class="flex items-center">
-          <span class="gap-1 text-xl font-bold hover:text-foreground/80">QR</span>
+          <span class="gap-1 text-xl font-bold hover:text-foreground">QR</span>
         </a>
       </div>
-      <nav class="hidden items-center gap-6 md:flex">
+      <nav class="hidden items-center gap-4 md:flex">
         <a
           href="/"
-          class="text-sm font-medium text-foreground/60 transition-colors hover:text-foreground"
+          class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
         >
           Home
         </a>
         {#if user}
           <a
             href="/dashboard"
-            class="text-sm font-medium text-foreground/60 transition-colors hover:text-foreground"
+            class="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             Dashboard
           </a>

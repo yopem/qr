@@ -6,6 +6,7 @@
     ref = $bindable(null),
     value = $bindable(""),
     class: className,
+    children,
     ...restProps
   }: TabsPrimitive.RootProps = $props()
 </script>
@@ -16,4 +17,6 @@
   data-slot="tabs"
   class={cn("flex flex-col gap-2", className)}
   {...restProps}
-/>
+>
+  {@render children?.()}
+</TabsPrimitive.Root>

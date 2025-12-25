@@ -23,12 +23,16 @@
   ></script>
 </svelte:head>
 
-<div class="flex min-h-screen flex-col">
-  <Navigation user={data?.user} />
+<div class="min-h-screen bg-gradient-to-b from-background via-background to-muted/40">
+  <div class="flex min-h-screen flex-col">
+    <Navigation user={data?.user} />
 
-  <main class="flex-1">
-    {@render children()}
-  </main>
+    <main class="flex-1">
+      <div class="mx-auto max-w-7xl px-4 py-8 md:py-10">
+        {@render children()}
+      </div>
+    </main>
 
-  <Footer />
+    <Footer />
+  </div>
 </div>
