@@ -153,7 +153,7 @@
   font-family: "adwaita-sans";
   src:
     url("/fonts/AdwaitaSans-Regular.woff2") format("woff2"),
-    url("/fonts/AdwaitaSans-Italic.woff") format("woff");
+    url("/fonts/AdwaitaSans-Italic.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
@@ -163,7 +163,7 @@
   font-family: "adwaita-mono";
   src:
     url("/fonts/AdwaitaMono-Regular.woff2") format("woff2"),
-    url("/fonts/AdwaitaMono-Italic.woff") format("woff");
+    url("/fonts/AdwaitaMono-Italic.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
