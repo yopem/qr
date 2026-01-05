@@ -3,6 +3,7 @@
   import LogoutButton from "$lib/components/auth/logout-button.svelte"
   import Logo from "$lib/components/logo.svelte"
   import { Button } from "$lib/components/ui/button"
+  import YopemServiceMenu from "$lib/components/yopem-service-menu.svelte"
 
   interface Props {
     user?: {
@@ -76,8 +77,15 @@
         {/if}
       </nav>
     </div>
-
     <div class="flex items-center gap-2">
+      {#if user}
+        <LogoutButton />
+      {:else}
+        <Button>
+          <a href="/auth/login">Login</a>
+        </Button>
+      {/if}
+
       <Button variant="ghost" size="icon" onclick={toggleDarkMode} aria-label="Toggle dark mode">
         {#if darkMode}
           <Sun class="h-5 w-5" />
@@ -86,13 +94,7 @@
         {/if}
       </Button>
 
-      {#if user}
-        <LogoutButton />
-      {:else}
-        <Button>
-          <a href="/auth/login">Login</a>
-        </Button>
-      {/if}
+      <YopemServiceMenu />
     </div>
   </div>
 </header>
